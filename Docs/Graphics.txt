@@ -1,0 +1,36 @@
+Nanny Whisperer Brand Colors
+Color Philosophy:
+Soft, familiar, neutral, warm, and friendly
+Gender-neutral (avoids traditional blue/pink)
+Main colors: "Pastel Black" + "Warm Green"
+Aligned with brand essence
+Color Palette:
+Light Pink / Pale Peach
+HEX: #EAD5D1
+RGB: 234, 213, 209
+HSB: 10°, 11%, 92%
+CMYK: 9, 19, 16, 0
+Light Green / Pale Mint
+HEX: #C8D5C4
+RGB: 200, 213, 196
+HSB: 106°, 8%, 84%
+CMYK: 27, 9, 27, 0
+Dark Green / Deep Teal / Forest Green
+HEX: #3F4C44
+RGB: 63, 76, 68
+HSB: 143°, 17%, 30%
+CMYK: 69, 48, 60, 50
+Dark Gray / "Pastel Black" (Main Color)
+HEX: #2E2E2E
+RGB: 46, 46, 46
+HSB: 0°, 0%, 18%
+CMYK: 70, 61, 57, 69
+Off-White / Very Light Cream
+HEX: #F8F6F2
+RGB: 248, 246, 242
+HSB: 40°, 2%, 97%
+CMYK: 4, 3, 6, 0
+
+Fonts:
+Montserrat
+Playfair Display 

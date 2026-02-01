@@ -1,0 +1,39 @@
+﻿What Is Handled in GoHighLevel (GHL Only)
+* Host onboarding forms
+
+* Nanny onboarding forms
+
+* Custom fields for profiles, availability, preferences, tiers
+
+* €20 membership setup (Hosts & Nannies)
+
+* Fast Track (€500) and VIP (€3,000) payments
+
+* €200 contract upsell payment
+
+* Stripe configuration and payment automations
+
+* Tier-based tagging (Standard / Fast Track / VIP)
+
+* Pipelines and internal stage tracking
+
+* Workflow automations (emails, SMS, internal alerts)
+
+* “Proceed / Pass” status updates via webhooks
+
+* Calendar creation (Host calendars + Concierge calendar)
+
+* Courses (video) setup
+
+* PDF guide hosting
+
+* Membership access control for courses and PDFs
+
+GHL Limitations (Within Doc Scope)
+   * No direct chat between Host and Nanny
+
+   * No mutual approval scheduling (5 slots → nanny approval)
+
+   * No two-party or three-party calendar agreement logic
+Summary Line
+GHL handles onboarding, payments, tagging, automations, calendars as availability sources, and content access — but does not handle user-to-user chat or approval-based scheduling.

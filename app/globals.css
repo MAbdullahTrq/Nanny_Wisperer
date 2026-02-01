@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Nanny Whisperer brand colors (CSS variables for non-Tailwind use) */
+  --color-pastel-black: #2e2e2e;
+  --color-dark-green: #3f4c44;
+  --color-light-green: #c8d5c4;
+  --color-light-pink: #ead5d1;
+  --color-off-white: #f8f6f2;
+
+  --font-primary: 'Montserrat', sans-serif;
+  --font-display: 'Playfair Display', serif;
+}
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+  body {
+    @apply bg-off-white text-pastel-black font-sans;
+  }
+}

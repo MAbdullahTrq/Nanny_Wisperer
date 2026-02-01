@@ -1,0 +1,111 @@
+import type { NextAuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import GoogleProvider from 'next-auth/providers/google';
+import { getUserByEmail, getUserById } from '@/lib/airtable/users';
+import { verifyPassword, validateEmail } from '@/lib/auth/password';
+import { config } from '@/lib/config';
+
+export const authOptions: NextAuthOptions = {
+  providers: [
+    CredentialsProvider({
+      name: 'Email and Password',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
+        if (!validateEmail(credentials.email)) return null;
+
+        const user = await getUserByEmail(credentials.email);
+        if (!user?.passwordHash) return null;
+
+        const valid = await verifyPassword(credentials.password, user.passwordHash);
+        if (!valid) return null;
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name ?? undefined,
+          userType: user.userType,
+          ghlContactId: user.ghlContactId ?? undefined,
+          airtableHostId: user.airtableHostId ?? undefined,
+          airtableNannyId: user.airtableNannyId ?? undefined,
+        };
+      },
+    }),
+    GoogleProvider({
+      clientId: config.google.clientId || 'dummy',
+      clientSecret: config.google.clientSecret || 'dummy',
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user, account }) {
+      if (user) {
+        if (account?.provider === 'credentials') {
+          token.userId = user.id;
+          token.userType = (user as { userType?: string }).userType;
+          token.ghlContactId = (user as { ghlContactId?: string }).ghlContactId;
+          token.airtableHostId = (user as { airtableHostId?: string }).airtableHostId;
+          token.airtableNannyId = (user as { airtableNannyId?: string }).airtableNannyId;
+        } else if (account?.provider === 'google' && user.email) {
+          const { createUser, updateUser } = await import('@/lib/airtable/users');
+          const { syncUserToGHL } = await import('@/lib/ghl/sync-user');
+          let dbUser = await getUserByEmail(user.email);
+          if (!dbUser) {
+            dbUser = await createUser({
+              email: user.email,
+              name: user.name ?? undefined,
+              userType: 'Host',
+            });
+            const ghlContactId = await syncUserToGHL({
+              email: user.email,
+              name: user.name ?? undefined,
+              userType: dbUser.userType,
+            });
+            if (ghlContactId && dbUser.id) {
+              await updateUser(dbUser.id, { ghlContactId });
+              dbUser = { ...dbUser, ghlContactId };
+            }
+          }
+          token.userId = dbUser.id;
+          token.userType = dbUser.userType;
+          token.ghlContactId = dbUser.ghlContactId;
+          token.airtableHostId = dbUser.airtableHostId;
+          token.airtableNannyId = dbUser.airtableNannyId;
+        }
+      }
+      if (token.userId && !user) {
+        const dbUser = await getUserById(token.userId as string);
+        if (dbUser) {
+          token.userType = dbUser.userType;
+          token.ghlContactId = dbUser.ghlContactId;
+          token.airtableHostId = dbUser.airtableHostId;
+          token.airtableNannyId = dbUser.airtableNannyId;
+        }
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as Record<string, unknown>).userId = token.userId;
+        (session.user as Record<string, unknown>).userType = token.userType;
+        (session.user as Record<string, unknown>).ghlContactId = token.ghlContactId;
+        (session.user as Record<string, unknown>).airtableHostId = token.airtableHostId;
+        (session.user as Record<string, unknown>).airtableNannyId = token.airtableNannyId;
+      }
+      return session;
+    },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
+  },
+  session: { strategy: 'jwt', maxAge: 30 * 24 * 60 * 60 },
+  pages: {
+    signIn: '/login',
+    error: '/login',
+  },
+  secret: config.auth.nextAuthSecret || 'fallback-dev-secret-change-in-production',
+};
