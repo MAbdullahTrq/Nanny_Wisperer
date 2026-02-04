@@ -53,7 +53,7 @@ In the project settings (or during import), open **Environment Variables** and a
 | `NEXTAUTH_URL` | Same as `NEXT_PUBLIC_APP_URL` |
 | `NEXTAUTH_SECRET` | Long random string (e.g. `openssl rand -base64 32`) |
 | `JWT_SECRET` or `TOKEN_SECRET` | Long random string (for shortlist/CV/interview tokens) |
-| `AIRTABLE_API_KEY` | Your Airtable API token |
+| `AIRTABLE_API_KEY` | Your Airtable **Personal Access Token** (PAT) |
 | `AIRTABLE_BASE_ID` | Your Airtable base ID |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
@@ -117,7 +117,7 @@ Your app URL is now different from localhost. Update:
 | 500 on login | Ensure `NEXTAUTH_URL` and `NEXTAUTH_SECRET` are set; URL must match the deployment URL. |
 | Redirect / callback errors | Confirm Google redirect URIs use the exact Vercel (or custom) URL. |
 | “Invalid token” or auth errors | Ensure `JWT_SECRET` or `TOKEN_SECRET` is set in Vercel env. |
-| Airtable errors | Check `AIRTABLE_API_KEY` and `AIRTABLE_BASE_ID`; token must have access to the base. |
+| Airtable errors | Check `AIRTABLE_API_KEY` (Personal Access Token) and `AIRTABLE_BASE_ID`; PAT must have access to the base. |
 
 ---
 

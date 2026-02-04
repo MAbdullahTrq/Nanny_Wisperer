@@ -34,8 +34,11 @@ export const config = {
     apiKey: getEnv('GHL_API_KEY', ''),
     accountId: getEnv('GHL_ACCOUNT_ID', ''),
     webhookSecret: getEnv('GHL_WEBHOOK_SECRET', ''),
+    /** Inbound webhook URL for signup form data (Host/Nanny) */
+    inboundWebhookUrl: getEnv('GHL_INBOUND_WEBHOOK_URL', ''),
   },
   airtable: {
+    /** Personal Access Token (PAT) from Airtable → Account → Developer hub */
     apiKey: getEnv('AIRTABLE_API_KEY', ''),
     baseId: getEnv('AIRTABLE_BASE_ID', ''),
   },

@@ -1,5 +1,5 @@
 /**
- * Airtable REST API client. Uses config.airtable (apiKey, baseId).
+ * Airtable REST API client. Uses config.airtable (Personal Access Token, baseId).
  */
 
 import { config } from '@/lib/config';

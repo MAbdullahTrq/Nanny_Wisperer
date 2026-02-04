@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getUserByEmail, createUser, updateUser } from '@/lib/airtable/users';
 import { hashPassword, validateEmail, validatePassword } from '@/lib/auth/password';
 import { syncUserToGHL } from '@/lib/ghl/sync-user';
+import { sendSignupToGHLInbound } from '@/lib/ghl/inbound-webhook';
 import type { UserType } from '@/types/airtable';
 
 export async function POST(request: Request) {
@@ -61,6 +62,14 @@ export async function POST(request: Request) {
     if (ghlContactId && user.id) {
       await updateUser(user.id, { ghlContactId });
     }
+
+    await sendSignupToGHLInbound({
+      email,
+      name: name || email,
+      signupType: userType,
+      userId: user.id,
+      source: 'nanny-whisperer',
+    });
 
     return NextResponse.json({
       success: true,
