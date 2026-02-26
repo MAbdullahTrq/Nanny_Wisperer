@@ -20,6 +20,7 @@ export const authOptions: NextAuthOptions = {
         try {
           const user = await getUserByEmail(credentials.email);
           if (!user?.passwordHash) return null;
+          if (user.locked) return null;
 
           const valid = await verifyPassword(credentials.password, user.passwordHash);
           if (!valid) return null;
@@ -41,6 +42,38 @@ export const authOptions: NextAuthOptions = {
         }
       },
     }),
+    // Impersonation: admin uses token from /api/admin/impersonate to sign in as another user
+    CredentialsProvider({
+      id: 'impersonation',
+      name: 'Impersonation',
+      credentials: {
+        impersonationToken: { label: 'Token', type: 'text' },
+      },
+      async authorize(credentials) {
+        const token = credentials?.impersonationToken;
+        if (!token || typeof token !== 'string') return null;
+        try {
+          const { verifyImpersonationToken } = await import('@/lib/auth/impersonation');
+          const payload = verifyImpersonationToken(token);
+          if (!payload?.targetUserId) return null;
+          const user = await getUserById(payload.targetUserId);
+          if (!user || user.locked) return null;
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name ?? undefined,
+            userType: user.userType,
+            ghlContactId: user.ghlContactId ?? undefined,
+            airtableHostId: user.airtableHostId ?? undefined,
+            airtableNannyId: user.airtableNannyId ?? undefined,
+            isAdmin: user.isAdmin ?? false,
+            isMatchmaker: user.isMatchmaker ?? false,
+          };
+        } catch {
+          return null;
+        }
+      },
+    }),
     GoogleProvider({
       clientId: config.google.clientId || 'dummy',
       clientSecret: config.google.clientSecret || 'dummy',
@@ -49,7 +82,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, account }) {
       if (user) {
-        if (account?.provider === 'credentials') {
+        if (account?.provider === 'credentials' || account?.provider === 'impersonation') {
           token.userId = user.id;
           token.userType = (user as { userType?: string }).userType;
           token.ghlContactId = (user as { ghlContactId?: string }).ghlContactId;
@@ -88,7 +121,15 @@ export const authOptions: NextAuthOptions = {
       }
       if (token.userId && !user) {
         const dbUser = await getUserById(token.userId as string);
-        if (dbUser) {
+        if (dbUser?.locked) {
+          token.userId = undefined;
+          token.userType = undefined;
+          token.ghlContactId = undefined;
+          token.airtableHostId = undefined;
+          token.airtableNannyId = undefined;
+          token.isAdmin = false;
+          token.isMatchmaker = false;
+        } else if (dbUser) {
           token.userType = dbUser.userType;
           token.ghlContactId = dbUser.ghlContactId;
           token.airtableHostId = dbUser.airtableHostId;

@@ -46,6 +46,11 @@ export const config = {
     /** Chat: table names must match your base exactly (default: Conversations, Messages) */
     conversationsTableName: getEnv('AIRTABLE_CONVERSATIONS_TABLE_NAME', 'Conversations'),
     messagesTableName: getEnv('AIRTABLE_MESSAGES_TABLE_NAME', 'Messages'),
+    /** Hosts and Nannies table names (default: Hosts, Nannies) */
+    hostsTableName: getEnv('AIRTABLE_HOSTS_TABLE_NAME', 'Hosts'),
+    nanniesTableName: getEnv('AIRTABLE_NANNIES_TABLE_NAME', 'Nannies'),
+    /** Set to "true" if your Nannies table has a "nannyType" column (Single select: Nanny, Au Pair). When false, we omit it so saves succeed without that column. */
+    nanniesHaveNannyTypeField: getEnv('AIRTABLE_NANNIES_HAVE_NANNY_TYPE') === 'true',
   },
 } as const;
 

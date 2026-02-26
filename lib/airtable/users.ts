@@ -23,6 +23,7 @@ function recordToUser(record: { id: string; fields: Record<string, unknown>; cre
     emailVerified: Boolean(f.emailVerified),
     isAdmin: Boolean(f.isAdmin),
     isMatchmaker: Boolean(f.isMatchmaker),
+    locked: Boolean(f.locked),
     createdTime: record.createdTime ?? f.createdTime as string,
   };
 }
@@ -69,7 +70,7 @@ export async function createUser(data: {
 
 export async function updateUser(
   id: string,
-  fields: Partial<Pick<User, 'name' | 'userType' | 'passwordHash' | 'ghlContactId' | 'airtableHostId' | 'airtableNannyId' | 'emailVerified' | 'isAdmin' | 'isMatchmaker'>>
+  fields: Partial<Pick<User, 'name' | 'userType' | 'passwordHash' | 'ghlContactId' | 'airtableHostId' | 'airtableNannyId' | 'emailVerified' | 'isAdmin' | 'isMatchmaker' | 'locked'>>
 ): Promise<User> {
   const update: Record<string, unknown> = {};
   if (fields.name !== undefined) update.name = fields.name;
@@ -81,6 +82,7 @@ export async function updateUser(
   if (fields.emailVerified !== undefined) update.emailVerified = fields.emailVerified;
   if (fields.isAdmin !== undefined) update.isAdmin = fields.isAdmin;
   if (fields.isMatchmaker !== undefined) update.isMatchmaker = fields.isMatchmaker;
+  if (fields.locked !== undefined) update.locked = fields.locked;
 
   const updated = await airtableUpdate(USERS_TABLE(), id, update);
   return recordToUser(updated as { id: string; fields: Record<string, unknown>; createdTime?: string });

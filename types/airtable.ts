@@ -18,6 +18,8 @@ export interface User {
   isAdmin?: boolean;
   /** Staff: can access Matchmaker dashboard (matches only). */
   isMatchmaker?: boolean;
+  /** When true, login is blocked (admin can set). */
+  locked?: boolean;
   createdTime?: string;
 }
 

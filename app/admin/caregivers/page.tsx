@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { getNannies } from '@/lib/airtable/nannies';
 import { Card } from '@/components/ui';
 
@@ -22,6 +23,9 @@ export default async function AdminCaregiversPage({
       </h1>
       <p className="text-dark-green/80 text-sm mb-6">
         Nannies and Au Pairs. No match data here — use Matchmaker dashboard for matches.
+      </p>
+      <p className="text-dark-green/60 text-xs mb-4">
+        Caregivers are loaded from the <strong>Nannies</strong> table in Airtable. A nanny appears here only after they complete onboarding (save at least one section). If your table has a different name, set <code className="bg-light-green/30 px-1 rounded">AIRTABLE_NANNIES_TABLE_NAME</code> in your env.
       </p>
 
       <div className="flex gap-2 mb-4">
@@ -58,6 +62,7 @@ export default async function AdminCaregiversPage({
                 <th className="py-2 pr-4 font-medium text-pastel-black">Type</th>
                 <th className="py-2 pr-4 font-medium text-pastel-black">Badge / Tier</th>
                 <th className="py-2 pr-4 font-medium text-pastel-black">Location</th>
+                <th className="py-2 pr-4 font-medium text-pastel-black">User</th>
               </tr>
             </thead>
             <tbody>
@@ -71,6 +76,15 @@ export default async function AdminCaregiversPage({
                   <td className="py-3 pr-4">{(c.nannyType as string) ?? 'Nanny'}</td>
                   <td className="py-3 pr-4">{c.badge ?? c.tier ?? '—'}</td>
                   <td className="py-3 pr-4">{c.currentLocation ?? c.city ?? '—'}</td>
+                  <td className="py-3 pr-4">
+                    {c.userId ? (
+                      <Link href={`/admin/users/${c.userId}`} className="text-dark-green font-medium hover:underline">
+                        View user
+                      </Link>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -41,6 +41,7 @@ The app expects this table to be named **Users** by default. If you use a differ
 | emailVerified    | Checkbox          | Default unchecked. |
 | isAdmin          | Checkbox          | Optional; check to grant access to `/admin`. |
 | isMatchmaker     | Checkbox          | Optional; check to grant access to `/matchmaker`. |
+| locked           | Checkbox          | Optional; when checked, user cannot log in (admin can set from user details). |
 
 *Airtable adds **Created** automatically; the app uses it as `createdTime`.*
 
@@ -107,14 +108,60 @@ The app expects this table to be named **Users** by default. If you use a differ
 
 ### Table: **Nannies**
 
-| Field name       | Type              | Notes |
-|------------------|-------------------|--------|
-| userId           | Single line text  | Users record ID. |
-| badge            | Single select     | Options: `Basic`, `Verified`, `Certified`. |
-| tier             | Single line text  | Can mirror badge. |
-| firstName        | Single line text  | |
-| lastName         | Single line text  | |
-| (others)         | As needed         | Same idea as Hosts; add fields to match onboarding. |
+Field names must match exactly. The app supports **"Title with spaces"** (same style as Hosts). Use either the names below or the exact camelCase equivalents from the code.
+
+| Field name (exact in Airtable) | Type              | Notes |
+|--------------------------------|-------------------|--------|
+| userId                          | Single line text  | Users record ID. |
+| badge                           | Single select     | Options: `Basic`, `Verified`, `Certified`. |
+| tier                            | Single line text  | Can mirror badge. |
+| Nanny type                      | Single select     | Options: `Nanny`, `Au Pair`. |
+| First name                      | Single line text  | |
+| Last name                       | Single line text  | |
+| Date of birth                   | Single line text  | |
+| Gender                          | Single line text  | |
+| Profile image URL               | Single line text  | |
+| Street and number               | Single line text  | |
+| Postcode                        | Single line text  | |
+| City                            | Single line text  | |
+| Country                         | Single line text  | |
+| Phone                           | Single line text  | |
+| Current location                | Single line text  | |
+| Nationality                     | Single line text  | |
+| Has childcare experience        | Checkbox          | |
+| Has driving licence             | Checkbox          | |
+| Smokes                          | Checkbox          | |
+| Vegetarian or vegan             | Checkbox          | |
+| Language skills                 | Long text         | |
+| Location preferences           | Long text         | |
+| Available start date           | Single line text  | |
+| Finish date                     | Single line text  | |
+| Finish date ongoing            | Checkbox          | |
+| Available hours                | Multiple select   | Morning, Afternoon, Evening, Overnight |
+| Available weekends             | Checkbox          | |
+| Available days                 | Multiple select   | Monday–Sunday |
+| EU au pair hours acknowledged  | Checkbox          | Au Pair only. |
+| Years childcare experience     | Number            | |
+| Age groups worked with         | Multiple select  | 0-2, 3-6, 7-12, Teens |
+| Special needs experience       | Checkbox          | |
+| Special needs details          | Long text         | |
+| Max children comfortable       | Number            | |
+| Can cook                       | Checkbox          | |
+| Tutoring homework              | Checkbox          | |
+| Light housekeeping             | Checkbox          | |
+| OK to travel and support       | Checkbox          | |
+| Comfortable with pets          | Checkbox          | |
+| Strong religious beliefs       | Checkbox          | |
+| Parenting style preference     | Single select     | Gentle, Balanced, Structured |
+| Dietary restrictions           | Checkbox          | |
+| Dietary details                | Long text         | |
+| Willing to cook non-vegetarian | Checkbox          | |
+| Expected monthly salary (net)  | Single line text  | |
+| Expected weekly pocket money   | Single line text  | Au Pair. |
+| Preferred contract type        | Single select     | Part time, Full time, Seasonal |
+| Preferred days off             | Multiple select   | |
+| About me                       | Long text         | |
+| location                        | Single line text  | Optional; for matching. |
 
 ---
 

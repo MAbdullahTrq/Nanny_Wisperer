@@ -7,13 +7,17 @@ import { signOut, useSession } from 'next-auth/react';
 /**
  * Nav bar for all pages. When logged out: full public nav (Home, For Hosts, For Nannies, Pricing, Login, Sign up).
  * When logged in on public routes (e.g. /): compact nav with Dashboard + Log out so navbar is always visible.
- * When on /host/* or /nanny/*: render nothing so only the host/nanny layout nav shows.
+ * When on /host/*, /nanny/*, /admin, or /matchmaker: render nothing so only that area's layout nav shows.
  */
 export default function PublicHeader() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const userType = (session?.user as { userType?: string } | undefined)?.userType;
-  const isAppRoute = pathname?.startsWith('/host') || pathname?.startsWith('/nanny');
+  const isAppRoute =
+    pathname?.startsWith('/host') ||
+    pathname?.startsWith('/nanny') ||
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/matchmaker');
 
   if (status === 'authenticated' && isAppRoute) {
     return null;

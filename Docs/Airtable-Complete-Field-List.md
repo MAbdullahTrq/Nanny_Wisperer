@@ -18,7 +18,7 @@ Also double-check your **Personal Access Token**: in Airtable → Account → De
 
 ## Checklist
 
-- [ ] **Users** – email, name, userType, passwordHash, ghlContactId, airtableHostId, airtableNannyId, emailVerified, isAdmin (checkbox), isMatchmaker (checkbox)
+- [ ] **Users** – email, name, userType, passwordHash, ghlContactId, airtableHostId, airtableNannyId, emailVerified, isAdmin (checkbox), isMatchmaker (checkbox), locked (checkbox)
 - [ ] **Hosts** – all fields above with **exact** “Title with spaces” names
 - [ ] **Nannies** – userId, badge, nannyType (Nanny | Au Pair), expectedWeeklyPocketMoney, euAuPairHoursAcknowledged, plus other camelCase onboarding fields
 - [ ] **Matches** – hostId, nannyId, score, hostProceed, nannyProceed, bothProceedAt, status, matchSource (auto | admin_curated | premium_concierge), sentToHostAt, sentToCaregiverAt

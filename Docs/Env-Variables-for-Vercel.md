@@ -17,6 +17,8 @@ Replace placeholders with your real values. After adding, redeploy.
 | `AIRTABLE_API_KEY` | `patxxxxxxxxxxxx` | Airtable **Personal Access Token** (PAT). Create in Airtable → Account → Developer hub; scope read/write on your base. |
 | `AIRTABLE_BASE_ID` | `appxxxxxxxxxxxx` | **Base** ID only: from your base URL (`airtable.com/appXXXXXXXX/...`). Must start with `app`. Using a table ID (`tbl...`) causes 404. |
 | `AIRTABLE_USERS_TABLE_NAME` | *(optional)* | Name of the table that stores user accounts. Default: `Users`. Set this if your table has a different name (e.g. `User`). |
+| `AIRTABLE_HOSTS_TABLE_NAME` | *(optional)* | Name of the Hosts table. Default: `Hosts`. Set if your table has a different name. |
+| `AIRTABLE_NANNIES_TABLE_NAME` | *(optional)* | Name of the Nannies/Caregivers table. Default: `Nannies`. Admin Caregivers list and matching read from this table; set if your table has a different name. |
 
 ---
 
@@ -76,6 +78,8 @@ JWT_SECRET=<same or another random string>
 AIRTABLE_API_KEY=<your Airtable Personal Access Token (PAT)>
 AIRTABLE_BASE_ID=<your Airtable base ID>
 # AIRTABLE_USERS_TABLE_NAME=Users   # only if your table has a different name
+# AIRTABLE_HOSTS_TABLE_NAME=Hosts
+# AIRTABLE_NANNIES_TABLE_NAME=Nannies   # Caregivers list and matching use this table
 GOOGLE_CLIENT_ID=<if using Google login/calendar>
 GOOGLE_CLIENT_SECRET=<if using Google>
 GOOGLE_CALENDAR_ID=primary

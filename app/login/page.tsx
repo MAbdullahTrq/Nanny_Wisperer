@@ -2,7 +2,7 @@
 
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Button, Input } from '@/components/ui';
 
@@ -10,10 +10,23 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = (searchParams.get('callbackUrl') as string) || '/auth/redirect';
   const error = searchParams.get('error');
+  const impersonateToken = searchParams.get('impersonate');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState('');
+  const impersonateDone = useRef(false);
+
+  useEffect(() => {
+    if (!impersonateToken || impersonateDone.current) return;
+    impersonateDone.current = true;
+    setLoading(true);
+    signIn('impersonation', {
+      impersonationToken: impersonateToken,
+      redirect: true,
+      callbackUrl,
+    }).finally(() => setLoading(false));
+  }, [impersonateToken, callbackUrl]);
 
   async function handleCredentials(e: React.FormEvent) {
     e.preventDefault();
@@ -31,6 +44,14 @@ function LoginForm() {
     });
     setLoading(false);
     if (res?.error) setFormError('Invalid email or password.');
+  }
+
+  if (impersonateToken && loading) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-12">
+        <p className="text-dark-green/80">Signing in…</p>
+      </div>
+    );
   }
 
   return (

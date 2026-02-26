@@ -5,11 +5,31 @@ import { getNanny, createNanny, updateNanny } from '@/lib/airtable/nannies';
 import { updateUser } from '@/lib/airtable/users';
 import { validateNannyOnboarding, validateNannyOnboardingSegment, type NannyOnboardingSegmentId } from '@/lib/validation/nanny-onboarding';
 
+/** Nanny fields that are Long text in Airtable; send string, not object/array. */
+const NANNY_LONG_TEXT_KEYS = new Set(['languageSkills', 'locationPreferences', 'specialNeedsDetails', 'dietaryDetails', 'aboutMe']);
+
+/** Nanny checkbox fields; Airtable expects boolean. */
+const NANNY_CHECKBOX_KEYS = new Set([
+  'hasChildcareExperience', 'hasDrivingLicence', 'smokes', 'vegetarianOrVegan',
+  'finishDateOngoing', 'availableWeekends', 'specialNeedsExperience',
+  'canCook', 'tutoringHomework', 'lightHousekeeping', 'okToTravelAndSupport',
+  'comfortableWithPets', 'strongReligiousBeliefs', 'dietaryRestrictions',
+  'willingToCookNonVegetarian', 'euAuPairHoursAcknowledged',
+]);
+
 function toAirtableFields(data: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(data)) {
     if (v === undefined || v === '') continue;
     if (Array.isArray(v) && v.length === 0) continue;
+    if (NANNY_LONG_TEXT_KEYS.has(k) && (typeof v === 'object' || Array.isArray(v))) {
+      out[k] = JSON.stringify(v);
+      continue;
+    }
+    if (NANNY_CHECKBOX_KEYS.has(k)) {
+      out[k] = v === true || (typeof v === 'string' && v.toLowerCase() === 'true');
+      continue;
+    }
     out[k] = v;
   }
   return out;
@@ -75,9 +95,10 @@ export async function POST(request: Request) {
       }
       return NextResponse.json({ success: true, nannyId, segment: segmentId });
     } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
       console.error('Nanny onboarding segment error:', e);
       return NextResponse.json(
-        { error: 'Something went wrong. Please try again.' },
+        { error: 'Something went wrong. Please try again.', detail: message },
         { status: 500 }
       );
     }
@@ -105,9 +126,10 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ success: true, nannyId });
   } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
     console.error('Nanny onboarding error:', e);
     return NextResponse.json(
-      { error: 'Something went wrong. Please try again.' },
+      { error: 'Something went wrong. Please try again.', detail: message },
       { status: 500 }
     );
   }

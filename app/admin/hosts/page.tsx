@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { getHosts } from '@/lib/airtable/hosts';
 import { Card } from '@/components/ui';
+import HostsTableBody from './HostsTableBody';
 
 export default async function AdminHostsPage() {
   const hosts = await getHosts({ maxRecords: 500 });
@@ -27,20 +27,10 @@ export default async function AdminHostsPage() {
                 <th className="py-2 pr-4 font-medium text-pastel-black">Location</th>
                 <th className="py-2 pr-4 font-medium text-pastel-black">Tier</th>
                 <th className="py-2 pr-4 font-medium text-pastel-black">Start date</th>
+                <th className="py-2 pr-4 font-medium text-pastel-black">User</th>
               </tr>
             </thead>
-            <tbody>
-              {hosts.map((h) => (
-                <tr key={h.id} className="border-b border-light-green/30">
-                  <td className="py-3 pr-4">
-                    <span className="font-medium text-pastel-black">{h.firstName ?? ''} {h.lastName ?? ''}</span>
-                  </td>
-                  <td className="py-3 pr-4 text-dark-green/90">{h.location ?? h.city ?? '—'}</td>
-                  <td className="py-3 pr-4">{h.tier ?? '—'}</td>
-                  <td className="py-3 pr-4">{h.desiredStartDate ?? '—'}</td>
-                </tr>
-              ))}
-            </tbody>
+            <HostsTableBody hosts={hosts} />
           </table>
         </div>
       )}

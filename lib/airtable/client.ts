@@ -64,7 +64,7 @@ export async function airtableGetRecord<T = unknown>(
 }
 
 /** Airtable checkbox fields must be boolean; normalize to avoid INVALID_VALUE_FOR_COLUMN (e.g. "false" string). */
-const CHECKBOX_FIELDS: string[] = ['emailVerified', 'isAdmin', 'isMatchmaker'];
+const CHECKBOX_FIELDS: string[] = ['emailVerified', 'isAdmin', 'isMatchmaker', 'locked'];
 
 function normalizeFieldsForCreate<T>(fields: T): T {
   const raw = fields as Record<string, unknown>;

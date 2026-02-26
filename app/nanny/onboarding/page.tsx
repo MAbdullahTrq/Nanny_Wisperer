@@ -16,8 +16,83 @@ const AVAILABLE_HOURS_OPTIONS = ['Morning', 'Afternoon', 'Evening', 'Overnight']
 const AVAILABLE_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
 const AGE_GROUPS = ['0-2', '3-6', '7-12', 'Teens'] as const;
 const LANGUAGE_LEVELS = ['Mother tongue', 'Conversational', 'Basic'] as const;
+const LANGUAGES = [
+  'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Dutch', 'Polish', 'Romanian',
+  'Arabic', 'Mandarin Chinese', 'Hindi', 'Japanese', 'Korean', 'Turkish', 'Russian', 'Ukrainian',
+  'Irish', 'Welsh', 'Scottish Gaelic', 'Other',
+];
 const PARENTING_STYLES = ['Gentle', 'Balanced', 'Structured'] as const;
 const CONTRACT_TYPES = ['Part time', 'Full time', 'Seasonal'] as const;
+
+const LANGUAGES_SET = new Set(LANGUAGES);
+
+type LanguageSkillRow = { language: string; level: string; otherLanguage?: string };
+
+function toRowLanguage(lang: string): Pick<LanguageSkillRow, 'language' | 'otherLanguage'> {
+  const trimmed = lang.trim();
+  if (!trimmed) return { language: '', otherLanguage: undefined };
+  if (LANGUAGES_SET.has(trimmed)) return { language: trimmed, otherLanguage: undefined };
+  return { language: 'Other', otherLanguage: trimmed };
+}
+
+function rowDisplayLanguage(row: LanguageSkillRow): string {
+  if (row.language === 'Other' && row.otherLanguage) return row.otherLanguage;
+  return row.language;
+}
+
+function parseLanguageSkills(value: string | Record<string, string> | undefined): LanguageSkillRow[] {
+  if (value === undefined || value === '') return [{ language: '', level: '' }];
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    return Object.entries(value).map(([language, level]) => ({
+      ...toRowLanguage(language),
+      level: level || '',
+    }));
+  }
+  const s = typeof value === 'string' ? value : '';
+  try {
+    const parsed = JSON.parse(s);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed.map((p: { language?: string; level?: string; otherLanguage?: string }) => ({
+        language: p.language ?? '',
+        level: p.level ?? '',
+        otherLanguage: p.otherLanguage,
+      }));
+    }
+  } catch {
+    // not JSON
+  }
+  if (!s.trim()) return [{ language: '', level: '' }];
+  const rows = s.split(',').map((part) => {
+    const colon = part.indexOf(':');
+    if (colon === -1) {
+      const lang = part.trim();
+      return { ...toRowLanguage(lang), level: '' };
+    }
+    const lang = part.slice(0, colon).trim();
+    const level = part.slice(colon + 1).trim();
+    return { ...toRowLanguage(lang), level };
+  }).filter((r) => r.language || r.level || r.otherLanguage);
+  return rows.length > 0 ? rows : [{ language: '', level: '' }];
+}
+
+function serializeLanguageSkills(rows: LanguageSkillRow[]): string {
+  const filled = rows.filter((r) => rowDisplayLanguage(r).trim() || r.level.trim());
+  if (filled.length === 0) return '';
+  return filled.map((r) => {
+    const name = rowDisplayLanguage(r);
+    return r.level ? `${name}: ${r.level}` : name;
+  }).join(', ');
+}
+
+/** At least one language with both language name and proficiency. */
+function hasAtLeastOneLanguage(rows: LanguageSkillRow[]): boolean {
+  return rows.some((r) => {
+    const name = rowDisplayLanguage(r).trim();
+    if (!name) return false;
+    if (r.language === 'Other' && !(r.otherLanguage?.trim())) return false;
+    return r.level.trim().length > 0;
+  });
+}
 
 const defaultData: NannyOnboardingInput = {
   firstName: '',
@@ -161,6 +236,14 @@ export default function NannyOnboardingPage() {
     const segmentId = NANNY_ONBOARDING_SEGMENTS[step]!.id;
     setLoading(true);
     setError('');
+    if (segmentId === 'language') {
+      const rows = parseLanguageSkills(data.languageSkills as string | Record<string, string> | undefined);
+      if (!hasAtLeastOneLanguage(rows)) {
+        setError('Please add at least one language and select a proficiency level.');
+        setLoading(false);
+        return;
+      }
+    }
     try {
       const payload = getSegmentPayload(segmentId, data);
       const res = await fetch('/api/nanny/onboarding', {
@@ -170,7 +253,8 @@ export default function NannyOnboardingPage() {
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error || 'Something went wrong.');
+        const msg = json.error || 'Something went wrong.';
+        setError(json.detail ? `${msg} (${json.detail})` : msg);
         setLoading(false);
         return;
       }
@@ -342,16 +426,88 @@ export default function NannyOnboardingPage() {
         )}
 
         {/* 4. Language skills */}
-        {step === 3 && (
-          <div className="space-y-4">
-            <h2 className="font-display text-lg font-semibold text-dark-green mb-4">Language skills</h2>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-pastel-black">Language skills</label>
-              <p className="text-xs text-dark-green/70 mb-1">Levels: Mother tongue, Conversational, Basic — e.g. &quot;English: Mother tongue&quot;</p>
-              <Input value={typeof data.languageSkills === 'string' ? data.languageSkills : (typeof data.languageSkills === 'object' ? JSON.stringify(data.languageSkills) : '')} onChange={(e) => update('languageSkills', e.target.value)} placeholder="Press enter to add custom option" />
+        {step === 3 && (() => {
+          const rows = parseLanguageSkills(data.languageSkills as string | Record<string, string> | undefined);
+          return (
+            <div className="space-y-4">
+              <h2 className="font-display text-lg font-semibold text-dark-green mb-4">Language skills</h2>
+              <p className="text-xs text-dark-green/70 mb-3">Add at least one language and proficiency level. You can add more if you like.</p>
+              {rows.map((row, index) => (
+                <div key={index} className="flex flex-wrap items-end gap-3 p-3 rounded-lg bg-off-white/80 border border-light-green/40">
+                  <div className="flex-1 min-w-[140px]">
+                    <label className="mb-1 block text-xs font-medium text-pastel-black">Language</label>
+                    <select
+                      value={row.language}
+                      onChange={(e) => {
+                        const next = [...rows];
+                        next[index] = { ...next[index]!, language: e.target.value, otherLanguage: e.target.value === 'Other' ? (next[index]?.otherLanguage ?? '') : undefined };
+                        update('languageSkills', serializeLanguageSkills(next));
+                      }}
+                      className="w-full rounded-lg border border-light-green/60 bg-white px-3 py-2.5 text-pastel-black"
+                    >
+                      <option value="">Select language</option>
+                      {LANGUAGES.map((lang) => (
+                        <option key={lang} value={lang}>{lang}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {row.language === 'Other' && (
+                    <div className="flex-1 min-w-[140px]">
+                      <label className="mb-1 block text-xs font-medium text-pastel-black">Specify language</label>
+                      <input
+                        type="text"
+                        value={row.otherLanguage ?? ''}
+                        onChange={(e) => {
+                          const next = [...rows];
+                          next[index] = { ...next[index]!, otherLanguage: e.target.value };
+                          update('languageSkills', serializeLanguageSkills(next));
+                        }}
+                        placeholder="e.g. Bengali, Swahili"
+                        className="w-full rounded-lg border border-light-green/60 bg-white px-3 py-2.5 text-pastel-black placeholder:text-dark-green/50"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-[140px]">
+                    <label className="mb-1 block text-xs font-medium text-pastel-black">Proficiency</label>
+                    <select
+                      value={row.level}
+                      onChange={(e) => {
+                        const next = [...rows];
+                        next[index] = { ...next[index]!, level: e.target.value };
+                        update('languageSkills', serializeLanguageSkills(next));
+                      }}
+                      className="w-full rounded-lg border border-light-green/60 bg-white px-3 py-2.5 text-pastel-black"
+                    >
+                      <option value="">Select level</option>
+                      {LANGUAGE_LEVELS.map((lvl) => (
+                        <option key={lvl} value={lvl}>{lvl}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {rows.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = rows.filter((_, i) => i !== index);
+                        update('languageSkills', serializeLanguageSkills(next.length ? next : [{ language: '', level: '' }]));
+                      }}
+                      className="py-2.5 px-3 text-sm text-red-600 hover:text-red-700 hover:bg-light-pink/30 rounded-lg transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => update('languageSkills', serializeLanguageSkills([...rows, { language: '', level: '' }]))}
+              >
+                Add another language
+              </Button>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* 5. Location Preferences */}
         {step === 4 && (
