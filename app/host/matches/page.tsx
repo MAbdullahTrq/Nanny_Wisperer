@@ -71,7 +71,7 @@ export default async function HostMatchesPage() {
                     <div>
                       <p className="font-medium text-pastel-black">{name}</p>
                       <p className="text-sm text-dark-green/80">
-                        Match: {match.score ?? '—'}% · {statusLabel(match)}
+                        Caregiver type: {(nanny?.nannyType as string) ?? 'Nanny'} · Match: {match.score ?? '—'}% · {statusLabel(match)}
                       </p>
                     </div>
                   </div>

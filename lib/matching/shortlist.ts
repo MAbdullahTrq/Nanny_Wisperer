@@ -22,6 +22,7 @@ export async function createShortlistForHost(hostId: string): Promise<string> {
     maxCandidates: TOP_N,
   });
 
+  const sentAt = new Date().toISOString();
   const matchIds: string[] = [];
   for (const { nanny, score } of eligible.slice(0, TOP_N)) {
     if (!nanny.id) continue;
@@ -30,6 +31,8 @@ export async function createShortlistForHost(hostId: string): Promise<string> {
       nannyId: nanny.id,
       score: score.total,
       status: 'pending',
+      matchSource: 'auto',
+      sentToHostAt: sentAt,
     });
     matchIds.push(match.id!);
   }

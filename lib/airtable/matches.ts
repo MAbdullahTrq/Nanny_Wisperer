@@ -37,6 +37,17 @@ export async function getMatchesByNanny(nannyId: string): Promise<Match[]> {
   return records.map((r) => recordToMatch(r));
 }
 
+export async function getMatches(params?: {
+  filterByFormula?: string;
+  maxRecords?: number;
+}): Promise<Match[]> {
+  const { records } = await airtableGet<Record<string, unknown>>(TABLE, {
+    filterByFormula: params?.filterByFormula,
+    maxRecords: params?.maxRecords ?? 500,
+  });
+  return records.map((r) => recordToMatch(r));
+}
+
 export async function createMatch(data: {
   hostId: string;
   nannyId: string;
@@ -45,6 +56,9 @@ export async function createMatch(data: {
   nannyProceed?: boolean;
   bothProceedAt?: string;
   status?: string;
+  matchSource?: 'auto' | 'admin_curated' | 'premium_concierge';
+  sentToHostAt?: string;
+  sentToCaregiverAt?: string;
 }): Promise<Match & { id: string }> {
   const created = await airtableCreate(TABLE, data as Record<string, unknown>);
   return { ...recordToMatch(created), id: created.id };
@@ -58,6 +72,9 @@ export async function updateMatch(
     nannyProceed: boolean;
     bothProceedAt: string;
     status: string;
+    matchSource: 'auto' | 'admin_curated' | 'premium_concierge';
+    sentToHostAt: string;
+    sentToCaregiverAt: string;
   }>
 ): Promise<Match> {
   const updated = await airtableUpdate(TABLE, id, fields as Record<string, unknown>);

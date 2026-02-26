@@ -22,14 +22,28 @@ function formatTime(createdTime?: string): string {
   }
 }
 
+function toSingleId(id: string | string[] | undefined): string | undefined {
+  if (id == null) return undefined;
+  return Array.isArray(id) ? id[0] : id;
+}
+
 export default async function HostChatPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect('/login?callbackUrl=/host/chat');
 
   const airtableHostId = (session.user as { airtableHostId?: string }).airtableHostId;
-  const conversations = airtableHostId
-    ? await getConversationsByHost(airtableHostId)
-    : [];
+
+  let conversations: Conversation[] = [];
+  let loadError: string | null = null;
+
+  try {
+    conversations = airtableHostId
+      ? await getConversationsByHost(airtableHostId)
+      : [];
+  } catch (err) {
+    console.error('[host/chat] getConversationsByHost failed:', err);
+    loadError = 'Unable to load conversations.';
+  }
 
   const list: Array<{
     conversation: Conversation;
@@ -39,17 +53,23 @@ export default async function HostChatPage() {
 
   for (const conv of conversations) {
     if (!conv.id) continue;
-    const [nanny, lastMessage] = await Promise.all([
-      conv.nannyId ? getNanny(conv.nannyId) : null,
-      getLastMessage(conv.id),
-    ]);
-    list.push({
-      conversation: conv,
-      nanny,
-      lastMessage: lastMessage
-        ? { content: lastMessage.content, createdTime: lastMessage.createdTime }
-        : null,
-    });
+    const nannyId = toSingleId(conv.nannyId);
+    try {
+      const [nanny, lastMessage] = await Promise.all([
+        nannyId ? getNanny(nannyId) : Promise.resolve(null),
+        getLastMessage(conv.id),
+      ]);
+      list.push({
+        conversation: conv,
+        nanny,
+        lastMessage: lastMessage
+          ? { content: lastMessage.content, createdTime: lastMessage.createdTime }
+          : null,
+      });
+    } catch (err) {
+      console.error('[host/chat] failed to load conversation', conv.id, err);
+      // Skip this conversation so the rest of the list still renders
+    }
   }
 
   return (
@@ -61,12 +81,18 @@ export default async function HostChatPage() {
         Conversations with nannies you&apos;ve both proceeded with.
       </p>
 
+      {loadError && (
+        <Card className="p-4 mb-6 border-l-4 border-l-amber-500 bg-amber-50/50">
+          <p className="text-pastel-black text-sm">{loadError}</p>
+        </Card>
+      )}
+
       {list.length === 0 ? (
-        <Card className="p-6">
-          <p className="text-dark-green/80">
+        <Card className="p-6 bg-light-green/10 border-dark-green/20">
+          <p className="text-dark-green/90">
             No conversations yet. Chat opens when both you and a nanny have proceeded on a match.
           </p>
-          <Link href="/host/matches" className="mt-3 inline-block text-dark-green font-medium hover:underline">
+          <Link href="/host/matches" className="mt-3 inline-block text-dark-green font-semibold underline decoration-light-green decoration-2 underline-offset-2 hover:decoration-dark-green transition-colors">
             View your matches
           </Link>
         </Card>

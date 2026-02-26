@@ -2,6 +2,8 @@
 
 Use **one Airtable base**. Table and field names must match exactly (case-sensitive). Create tables in any order; link fields after both tables exist.
 
+**→ For a single reference of every field in every table, see [Airtable-Complete-Field-List.md](./Airtable-Complete-Field-List.md).**
+
 ---
 
 ## 1. Create a base
@@ -9,8 +11,11 @@ Use **one Airtable base**. Table and field names must match exactly (case-sensit
 1. Go to [airtable.com](https://airtable.com) and sign in.
 2. **Add a base** → **Start from scratch** (or duplicate a blank base).
 3. Name it (e.g. "Nanny Whisperer").
-4. Copy the **Base ID** from the URL: `https://airtable.com/appXXXXXXXXXXXXXX/...` → the `appXXXXXXXXXXXXXX` part. You’ll use it as `AIRTABLE_BASE_ID` in the app.
-5. Create a **Personal Access Token** (Account → Developer hub → Personal access tokens) with **read** and **write** access to this base. Use it as `AIRTABLE_API_KEY` in the app.
+4. Copy the **Base ID** from the URL: `https://airtable.com/appXXXXXXXXXXXXXX/...` → the part that **starts with `app`** (e.g. `appAbc123XYZ`). Use it as `AIRTABLE_BASE_ID`. Do **not** use a table ID (which starts with `tbl`) — that causes 404.
+5. Create a **Personal Access Token** (Account → Developer hub → Personal access tokens):
+   - Add **Bases** and select **this base** (so the token has access to it).
+   - Add scopes **data.records:read** and **data.records:write**.
+   - Use the token as `AIRTABLE_API_KEY`. If the token doesn’t have access to the base, the API returns 404.
 
 ---
 
@@ -22,6 +27,8 @@ Create the following tables. **Table names** must be exactly as written. For eac
 
 ### Table: **Users**
 
+The app expects this table to be named **Users** by default. If you use a different name (e.g. "User"), set the env var `AIRTABLE_USERS_TABLE_NAME` to that exact name (case-sensitive).
+
 | Field name       | Type              | Options / notes |
 |------------------|-------------------|------------------|
 | email            | Single line text  | Unique; used for login. |
@@ -32,23 +39,69 @@ Create the following tables. **Table names** must be exactly as written. For eac
 | airtableHostId   | Single line text  | Optional; Host record ID after onboarding. |
 | airtableNannyId  | Single line text  | Optional; Nanny record ID after onboarding. |
 | emailVerified    | Checkbox          | Default unchecked. |
+| isAdmin          | Checkbox          | Optional; check to grant access to `/admin`. |
+| isMatchmaker     | Checkbox          | Optional; check to grant access to `/matchmaker`. |
 
 *Airtable adds **Created** automatically; the app uses it as `createdTime`.*
+
+**To add an admin or matchmaker:** (1) The field names in Airtable must be exactly **isAdmin** and **isMatchmaker** (case-sensitive, no spaces). (2) Ensure the user has a row in Users (they sign up as Host or Nanny, or you create one). (3) In the Users table, check **isAdmin** and/or **isMatchmaker** for that user. (4) They must **log out and log back in** for the new role to apply; after that they will be redirected to `/admin` or `/matchmaker` instead of the host/nanny dashboard.
 
 ---
 
 ### Table: **Hosts**
 
-| Field name       | Type              | Notes |
-|------------------|-------------------|--------|
-| userId           | Single line text  | Users record ID; links this host to a user. |
-| firstName        | Single line text  | |
-| lastName         | Single line text  | |
-| location         | Single line text  | e.g. city for matching. |
-| tier             | Single line text  | e.g. `VIP` for matching. |
-| (others)         | As needed         | Add any extra onboarding fields (phone, city, postcode, childrenAndAges, etc.) as Single line, Long text, Number, Checkbox, or Single select. |
+**Field names must match exactly** (including spaces and capitals). The app maps to these Airtable field names:
 
-*The app expects at least `userId`; other fields follow your onboarding form. Add **Created** if you want an explicit created time.*
+| Field name (exact in Airtable) | Type              | Notes |
+|-------------------------------|-------------------|--------|
+| userId                        | Single line text  | Users record ID; links this host to a user. |
+| First name                    | Single line text  | |
+| Last name                     | Single line text  | |
+| Date of birth                 | Single line text  | |
+| Profile image URL             | Single line text  | |
+| Street and number             | Single line text  | |
+| Postcode                      | Single line text  | |
+| City                          | Single line text  | |
+| Country                       | Single line text  | |
+| Phone                         | Single line text  | |
+| Job location country          | Single line text  | |
+| Job location place            | Single line text  | |
+| Accommodation type            | Single select     | Live-In, Live-Out, Either |
+| Household languages           | Single line / Long text | |
+| Travel expectations           | Single select     | None, Occasional, Frequent Travel with Family |
+| Children and ages             | Long text         | |
+| Desired start date            | Single line text  | |
+| Finish date                   | Single line text  | |
+| Finish date ongoing           | Checkbox          | |
+| Required hours                | Multiple select   | Morning, Afternoon, Evening, Overnight |
+| Weekends required             | Checkbox          | |
+| Required days                 | Multiple select   | Mon–Sun |
+| Age group experience required | Multiple select   | Infant, Toddler, School age, Teen |
+| Special needs care            | Checkbox          | |
+| Max children                  | Number            | |
+| Cooking for children         | Checkbox          | |
+| Tutoring homework            | Checkbox          | |
+| Driving                      | Checkbox          | |
+| Travel assistance            | Checkbox          | |
+| Light housekeeping           | Checkbox          | |
+| Primary language required    | Single line text  | |
+| Primary language level       | Single select     | Mother tongue, Conversational, Basic |
+| Language spoken with children | Single line text  | |
+| Language spoken with children level | Single select | |
+| Pets in home                 | Checkbox          | |
+| Smoking policy               | Single select     | No smoking, Outdoor only, Flexible |
+| Strong religious beliefs     | Checkbox          | |
+| Parenting style              | Single select     | Gentle, Balanced, Structured |
+| Dietary preferences          | Multiple select   | Vegan, Vegetarian, etc. |
+| Nanny follow dietary         | Checkbox          | |
+| Monthly salary range         | Single select     | €1000-€2000, €2000-€4000, €4000+ |
+| Preferred contract type      | Single select     | Part time, Full time, Seasonal |
+| Trial period preference      | Single select     | 2 weeks, 1 month, No trial |
+| About family                 | Long text         | |
+| location                      | Single line text  | Optional; e.g. city for matching. |
+| tier                          | Single line text  | Optional; e.g. VIP for matching. |
+
+*Add **Created** if you want an explicit created time. You can create only the fields you need; the app will write to any that exist.*
 
 ---
 
@@ -180,7 +233,27 @@ If you prefer, you can use “Link to another record” for relations and the ap
 
 ---
 
-## 5. After the base is ready
+## 5. Troubleshooting: 404 NOT_FOUND
+
+If the app logs **Airtable GET Users: 404 {"error":"NOT_FOUND"}**, check:
+
+1. **Base ID, not table ID**  
+   `AIRTABLE_BASE_ID` must be the **base** ID (starts with `app`), from the base URL: `airtable.com/appXXXXXXXX/...`. Do **not** use a table ID (starts with `tbl`).
+
+2. **PAT has access to this base**  
+   In Airtable → Account → Developer hub → your token: under **Access**, add **this base**. If the token can’t see the base, the API returns 404.
+
+3. **Table name**  
+   The Users table must be named exactly **Users** (or set `AIRTABLE_USERS_TABLE_NAME` to your table’s exact name, case-sensitive).
+
+4. **No typos or spaces**  
+   In Vercel env, ensure there are no leading/trailing spaces and no quotes around the value.
+
+After changing env vars, **redeploy** so the new values are used.
+
+---
+
+## 6. After the base is ready
 
 1. Put **AIRTABLE_BASE_ID** (base ID) and **AIRTABLE_API_KEY** (Personal Access Token) in your app env.
 2. Ensure the PAT has **read** and **write** access to this base (and the right scopes in Developer hub).

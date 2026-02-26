@@ -83,6 +83,29 @@ export async function getInterviewRequestByMatchId(
   return recordToInterviewRequest(records[0]);
 }
 
+export async function getInterviewRequests(params?: { maxRecords?: number }): Promise<InterviewRequest[]> {
+  const { records } = await airtableGet<Record<string, unknown>>(TABLE, {
+    maxRecords: params?.maxRecords ?? 200,
+  });
+  return records.map((r) => recordToInterviewRequest(r));
+}
+
+export async function getInterviewRequestsByHost(hostId: string): Promise<InterviewRequest[]> {
+  const { records } = await airtableGet<Record<string, unknown>>(TABLE, {
+    filterByFormula: `{hostId} = '${hostId.replace(/'/g, "\\'")}'`,
+    maxRecords: 100,
+  });
+  return records.map((r) => recordToInterviewRequest(r));
+}
+
+export async function getInterviewRequestsByNanny(nannyId: string): Promise<InterviewRequest[]> {
+  const { records } = await airtableGet<Record<string, unknown>>(TABLE, {
+    filterByFormula: `{nannyId} = '${nannyId.replace(/'/g, "\\'")}'`,
+    maxRecords: 100,
+  });
+  return records.map((r) => recordToInterviewRequest(r));
+}
+
 export async function updateInterviewRequest(
   id: string,
   fields: Partial<{

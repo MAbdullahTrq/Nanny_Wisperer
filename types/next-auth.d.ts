@@ -8,6 +8,8 @@ declare module 'next-auth' {
     ghlContactId?: string;
     airtableHostId?: string;
     airtableNannyId?: string;
+    isAdmin?: boolean;
+    isMatchmaker?: boolean;
   }
 
   interface Session {
@@ -17,6 +19,8 @@ declare module 'next-auth' {
       ghlContactId?: string;
       airtableHostId?: string;
       airtableNannyId?: string;
+      isAdmin?: boolean;
+      isMatchmaker?: boolean;
     } & DefaultSession['user'];
   }
 }
@@ -28,5 +32,7 @@ declare module 'next-auth/jwt' {
     ghlContactId?: string;
     airtableHostId?: string;
     airtableNannyId?: string;
+    isAdmin?: boolean;
+    isMatchmaker?: boolean;
   }
 }

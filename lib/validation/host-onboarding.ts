@@ -77,6 +77,39 @@ export const hostOnboardingSchema = z.object({
 
 export type HostOnboardingInput = z.infer<typeof hostOnboardingSchema>;
 
+/** Segment definitions for submitting host onboarding in parts. Keys must match hostOnboardingSchema. */
+export const HOST_ONBOARDING_SEGMENTS = [
+  { id: 'profile', title: 'Profile Info', keys: ['firstName', 'lastName', 'dateOfBirth', 'profileImageUrl'] as const },
+  { id: 'contact', title: 'Contact Details', keys: ['streetAndNumber', 'postcode', 'city', 'country', 'phone'] as const },
+  { id: 'location', title: 'Location and living setup', keys: ['jobLocationCountry', 'jobLocationPlace', 'accommodationType', 'householdLanguages', 'travelExpectations', 'childrenAndAges'] as const },
+  { id: 'schedule', title: 'Schedule & Required Days', keys: ['desiredStartDate', 'finishDate', 'finishDateOngoing', 'requiredHours', 'weekendsRequired', 'requiredDays'] as const },
+  { id: 'childcare', title: 'Childcare needs', keys: ['ageGroupExperienceRequired', 'specialNeedsCare', 'maxChildren'] as const },
+  { id: 'skills', title: 'Skills and responsibilities', keys: ['cookingForChildren', 'tutoringHomework', 'driving', 'travelAssistance', 'lightHousekeeping'] as const },
+  { id: 'language', title: 'Language skills', keys: ['primaryLanguageRequired', 'primaryLanguageLevel', 'languageSpokenWithChildren', 'languageSpokenWithChildrenLevel'] as const },
+  { id: 'lifestyle', title: 'Lifestyle and household', keys: ['petsInHome', 'smokingPolicy', 'strongReligiousBeliefs', 'parentingStyle', 'dietaryPreferences', 'nannyFollowDietary'] as const },
+  { id: 'compensation', title: 'Compensation and contract', keys: ['monthlySalaryRange', 'preferredContractType', 'trialPeriodPreference'] as const },
+  { id: 'about', title: 'Write a few words about you', keys: ['aboutFamily'] as const },
+] as const;
+
+export type HostOnboardingSegmentId = (typeof HOST_ONBOARDING_SEGMENTS)[number]['id'];
+
+/** Validate only the fields for a given segment. Returns partial data for that segment. */
+export function validateHostOnboardingSegment(
+  segmentId: HostOnboardingSegmentId,
+  data: unknown
+): { success: true; data: Partial<HostOnboardingInput> } | { success: false; error: z.ZodError } {
+  const segment = HOST_ONBOARDING_SEGMENTS.find((s) => s.id === segmentId);
+  if (!segment) return { success: false, error: new z.ZodError([{ code: 'custom', path: [], message: 'Unknown segment' }]) as z.ZodError };
+  const raw = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {};
+  const picked: Record<string, unknown> = {};
+  for (const k of segment.keys) {
+    if (k in raw) picked[k] = raw[k];
+  }
+  const result = hostOnboardingSchema.partial().safeParse(picked);
+  if (result.success) return { success: true, data: result.data };
+  return { success: false, error: result.error };
+}
+
 /** Validate and strip unknown keys for Airtable. */
 export function validateHostOnboarding(data: unknown): { success: true; data: HostOnboardingInput } | { success: false; error: z.ZodError } {
   const result = hostOnboardingSchema.safeParse(data);

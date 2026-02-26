@@ -2,11 +2,12 @@
  * Airtable Conversations and Messages. T7.1 — chat schema and API.
  */
 
+import { config } from '@/lib/config';
 import type { Conversation, Message, SenderType } from '@/types/airtable';
 import { airtableCreate, airtableGet, airtableGetRecord } from './client';
 
-const CONVERSATIONS_TABLE = 'Conversations';
-const MESSAGES_TABLE = 'Messages';
+const CONVERSATIONS_TABLE = () => config.airtable.conversationsTableName;
+const MESSAGES_TABLE = () => config.airtable.messagesTableName;
 
 function recordToConversation(record: {
   id: string;
@@ -37,7 +38,7 @@ export async function createConversation(
   hostId: string,
   nannyId: string
 ): Promise<Conversation & { id: string }> {
-  const created = await airtableCreate(CONVERSATIONS_TABLE, {
+  const created = await airtableCreate(CONVERSATIONS_TABLE(), {
     matchId,
     hostId,
     nannyId,
@@ -46,13 +47,13 @@ export async function createConversation(
 }
 
 export async function getConversation(id: string): Promise<Conversation | null> {
-  const record = await airtableGetRecord<Record<string, unknown>>(CONVERSATIONS_TABLE, id);
+  const record = await airtableGetRecord<Record<string, unknown>>(CONVERSATIONS_TABLE(), id);
   if (!record) return null;
   return recordToConversation(record);
 }
 
 export async function getConversationByMatchId(matchId: string): Promise<Conversation | null> {
-  const { records } = await airtableGet<Record<string, unknown>>(CONVERSATIONS_TABLE, {
+  const { records } = await airtableGet<Record<string, unknown>>(CONVERSATIONS_TABLE(), {
     filterByFormula: `{matchId} = '${matchId.replace(/'/g, "\\'")}'`,
     maxRecords: 1,
   });
@@ -61,7 +62,7 @@ export async function getConversationByMatchId(matchId: string): Promise<Convers
 }
 
 export async function getConversationsByHost(hostId: string): Promise<Conversation[]> {
-  const { records } = await airtableGet<Record<string, unknown>>(CONVERSATIONS_TABLE, {
+  const { records } = await airtableGet<Record<string, unknown>>(CONVERSATIONS_TABLE(), {
     filterByFormula: `{hostId} = '${hostId.replace(/'/g, "\\'")}'`,
     maxRecords: 100,
   });
@@ -69,7 +70,7 @@ export async function getConversationsByHost(hostId: string): Promise<Conversati
 }
 
 export async function getConversationsByNanny(nannyId: string): Promise<Conversation[]> {
-  const { records } = await airtableGet<Record<string, unknown>>(CONVERSATIONS_TABLE, {
+  const { records } = await airtableGet<Record<string, unknown>>(CONVERSATIONS_TABLE(), {
     filterByFormula: `{nannyId} = '${nannyId.replace(/'/g, "\\'")}'`,
     maxRecords: 100,
   });
@@ -77,7 +78,7 @@ export async function getConversationsByNanny(nannyId: string): Promise<Conversa
 }
 
 export async function getMessages(conversationId: string): Promise<Message[]> {
-  const { records } = await airtableGet<Record<string, unknown>>(MESSAGES_TABLE, {
+  const { records } = await airtableGet<Record<string, unknown>>(MESSAGES_TABLE(), {
     filterByFormula: `{conversationId} = '${conversationId.replace(/'/g, "\\'")}'`,
     maxRecords: 200,
   });
@@ -104,7 +105,7 @@ export async function addMessage(
     content,
   };
   if (attachmentUrl) fields.attachmentUrl = attachmentUrl;
-  const created = await airtableCreate(MESSAGES_TABLE, fields);
+  const created = await airtableCreate(MESSAGES_TABLE(), fields);
   return { ...recordToMessage(created), id: created.id };
 }
 

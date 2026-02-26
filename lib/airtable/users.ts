@@ -3,10 +3,11 @@
  * ghlContactId, airtableHostId, airtableNannyId, emailVerified, createdTime.
  */
 
+import { config } from '@/lib/config';
 import { airtableGet, airtableGetRecord, airtableCreate, airtableUpdate } from './client';
 import type { User, UserType } from '@/types/airtable';
 
-const USERS_TABLE = 'Users';
+const USERS_TABLE = () => config.airtable.usersTableName;
 
 function recordToUser(record: { id: string; fields: Record<string, unknown>; createdTime?: string }): User {
   const f = record.fields;
@@ -20,12 +21,14 @@ function recordToUser(record: { id: string; fields: Record<string, unknown>; cre
     airtableHostId: (f.airtableHostId as string) ?? undefined,
     airtableNannyId: (f.airtableNannyId as string) ?? undefined,
     emailVerified: Boolean(f.emailVerified),
+    isAdmin: Boolean(f.isAdmin),
+    isMatchmaker: Boolean(f.isMatchmaker),
     createdTime: record.createdTime ?? f.createdTime as string,
   };
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const { records } = await airtableGet<Record<string, unknown>>(USERS_TABLE, {
+  const { records } = await airtableGet<Record<string, unknown>>(USERS_TABLE(), {
     filterByFormula: `{email} = "${email.replace(/"/g, '\\"')}"`,
     maxRecords: 1,
   });
@@ -34,7 +37,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 }
 
 export async function getUserById(id: string): Promise<User | null> {
-  const record = await airtableGetRecord<Record<string, unknown>>(USERS_TABLE, id);
+  const record = await airtableGetRecord<Record<string, unknown>>(USERS_TABLE(), id);
   if (!record) return null;
   return recordToUser(record as { id: string; fields: Record<string, unknown>; createdTime?: string });
 }
@@ -55,13 +58,18 @@ export async function createUser(data: {
   if (data.ghlContactId) fields.ghlContactId = data.ghlContactId;
   fields.emailVerified = false;
 
-  const created = await airtableCreate(USERS_TABLE, fields);
+  // #region agent log (Vercel: see Function logs in dashboard)
+  const logA = { location: 'lib/airtable/users.ts:createUser', message: 'createUser fields before airtableCreate', data: { emailVerified: fields.emailVerified, emailVerifiedType: typeof fields.emailVerified, fieldsKeys: Object.keys(fields), emailVerifiedInStringify: JSON.stringify(fields).includes('"false"') }, hypothesisId: 'A' };
+  console.log('[debug]', JSON.stringify(logA));
+  // #endregion
+
+  const created = await airtableCreate(USERS_TABLE(), fields);
   return recordToUser(created as { id: string; fields: Record<string, unknown>; createdTime?: string });
 }
 
 export async function updateUser(
   id: string,
-  fields: Partial<Pick<User, 'name' | 'userType' | 'passwordHash' | 'ghlContactId' | 'airtableHostId' | 'airtableNannyId' | 'emailVerified'>>
+  fields: Partial<Pick<User, 'name' | 'userType' | 'passwordHash' | 'ghlContactId' | 'airtableHostId' | 'airtableNannyId' | 'emailVerified' | 'isAdmin' | 'isMatchmaker'>>
 ): Promise<User> {
   const update: Record<string, unknown> = {};
   if (fields.name !== undefined) update.name = fields.name;
@@ -71,7 +79,9 @@ export async function updateUser(
   if (fields.airtableHostId !== undefined) update.airtableHostId = fields.airtableHostId;
   if (fields.airtableNannyId !== undefined) update.airtableNannyId = fields.airtableNannyId;
   if (fields.emailVerified !== undefined) update.emailVerified = fields.emailVerified;
+  if (fields.isAdmin !== undefined) update.isAdmin = fields.isAdmin;
+  if (fields.isMatchmaker !== undefined) update.isMatchmaker = fields.isMatchmaker;
 
-  const updated = await airtableUpdate(USERS_TABLE, id, update);
+  const updated = await airtableUpdate(USERS_TABLE(), id, update);
   return recordToUser(updated as { id: string; fields: Record<string, unknown>; createdTime?: string });
 }

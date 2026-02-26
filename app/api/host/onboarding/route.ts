@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
 import { getHost, createHost, updateHost } from '@/lib/airtable/hosts';
 import { updateUser } from '@/lib/airtable/users';
-import { validateHostOnboarding } from '@/lib/validation/host-onboarding';
+import { validateHostOnboarding, validateHostOnboardingSegment, type HostOnboardingSegmentId } from '@/lib/validation/host-onboarding';
 
 /** Build Airtable fields from validated input (omit empty strings, undefined). */
 function toAirtableFields(data: Record<string, unknown>): Record<string, unknown> {
@@ -46,11 +46,42 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  let body: unknown;
+  let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    body = (await request.json()) as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  const segmentId = body.segment as HostOnboardingSegmentId | undefined;
+  if (segmentId) {
+    const { segment, ...payload } = body;
+    const validated = validateHostOnboardingSegment(segmentId, payload);
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: validated.error.flatten() },
+        { status: 400 }
+      );
+    }
+    const fields = toAirtableFields({ ...validated.data, userId } as Record<string, unknown>);
+    try {
+      let hostId: string;
+      if (airtableHostId) {
+        await updateHost(airtableHostId, fields);
+        hostId = airtableHostId;
+      } else {
+        const created = await createHost(fields);
+        hostId = created.id!;
+        await updateUser(userId, { airtableHostId: hostId });
+      }
+      return NextResponse.json({ success: true, hostId, segment: segmentId });
+    } catch (e) {
+      console.error('Host onboarding segment error:', e);
+      return NextResponse.json(
+        { error: 'Something went wrong. Please try again.' },
+        { status: 500 }
+      );
+    }
   }
 
   const validated = validateHostOnboarding(body);

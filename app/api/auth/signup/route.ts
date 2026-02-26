@@ -1,14 +1,81 @@
 import { NextResponse } from 'next/server';
+import { config } from '@/lib/config';
 import { getUserByEmail, createUser, updateUser } from '@/lib/airtable/users';
 import { hashPassword, validateEmail, validatePassword } from '@/lib/auth/password';
 import { syncUserToGHL } from '@/lib/ghl/sync-user';
 import { sendSignupToGHLInbound } from '@/lib/ghl/inbound-webhook';
 import type { UserType } from '@/types/airtable';
 
+/** Airtable base IDs start with "app"; table IDs start with "tbl". Using a table ID as base causes 404. */
+function isLikelyBaseId(id: string): boolean {
+  const trimmed = (id || '').trim();
+  return trimmed.length > 0 && trimmed.toLowerCase().startsWith('app');
+}
+
+/** Quick Airtable connectivity check; returns null if ok, or error message if not. */
+async function checkAirtableAccess(): Promise<{ ok: true } | { ok: false; status: number; text: string }> {
+  const apiKey = config.airtable.apiKey;
+  const baseId = (config.airtable.baseId || '').trim();
+  const tableName = (config.airtable.usersTableName || 'Users').trim();
+  if (!apiKey || !baseId) return { ok: false, status: 0, text: 'Missing AIRTABLE_API_KEY or AIRTABLE_BASE_ID' };
+  if (!isLikelyBaseId(baseId)) {
+    console.error('Signup: AIRTABLE_BASE_ID should be a base ID (starts with "app"), not a table ID. Get it from your base URL: airtable.com/appXXXXXXXX/...');
+    return { ok: false, status: 404, text: 'AIRTABLE_BASE_ID should start with "app" (base ID from base URL)' };
+  }
+  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}?maxRecords=1`;
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    cache: 'no-store',
+  });
+  if (res.ok) return { ok: true };
+  const text = await res.text();
+  if (res.status === 404) {
+    console.error('Signup: Airtable 404. baseId=' + baseId.slice(0, 12) + '... tableName=' + JSON.stringify(tableName) + '. Ensure: (1) Base ID is from base URL (starts with app), (2) PAT has access to this base, (3) Table name matches exactly.');
+  }
+  return { ok: false, status: res.status, text };
+}
+
 export async function POST(request: Request) {
+  let body: unknown;
   try {
-    const body = await request.json();
-    const { email, name, password, userType } = body as {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid request body.' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    if (!config.airtable.apiKey || !config.airtable.baseId) {
+      console.error('Signup: Missing AIRTABLE_API_KEY or AIRTABLE_BASE_ID');
+      return NextResponse.json(
+        { error: 'Signup is not configured. Please contact support.' },
+        { status: 503 }
+      );
+    }
+
+    const airtableCheck = await checkAirtableAccess();
+    if (!airtableCheck.ok) {
+      const hint =
+        airtableCheck.status === 401
+          ? 'Invalid Airtable token (check AIRTABLE_API_KEY).'
+          : airtableCheck.status === 404
+            ? airtableCheck.text.includes('start with')
+              ? airtableCheck.text
+              : `Base or table not found. Use base ID from URL (starts with "app"). Ensure your Personal Access Token has access to this base and table "${config.airtable.usersTableName}" exists.`
+            : `Airtable returned ${airtableCheck.status}.`;
+      console.error('Signup: Airtable check failed', airtableCheck.status, airtableCheck.text, hint);
+      return NextResponse.json(
+        { error: 'Signup is temporarily unavailable. Please try again later or contact support.' },
+        { status: 503 }
+      );
+    }
+
+    const { email, name, password, userType } = (body && typeof body === 'object' ? body : {}) as {
       email?: string;
       name?: string;
       password?: string;
@@ -78,10 +145,15 @@ export async function POST(request: Request) {
       userType: user.userType,
     });
   } catch (e) {
-    console.error('Signup error:', e);
+    const err = e instanceof Error ? e : new Error(String(e));
+    console.error('Signup error:', err.message, err.stack ?? err);
+    const isAirtable = err.message.includes('Airtable');
+    const message = isAirtable
+      ? 'Signup is temporarily unavailable. Please try again later or contact support.'
+      : 'Something went wrong. Please try again.';
     return NextResponse.json(
-      { error: 'Something went wrong. Please try again.' },
-      { status: 500 }
+      { error: message },
+      { status: isAirtable ? 503 : 500 }
     );
   }
 }

@@ -17,21 +17,28 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
         if (!validateEmail(credentials.email)) return null;
 
-        const user = await getUserByEmail(credentials.email);
-        if (!user?.passwordHash) return null;
+        try {
+          const user = await getUserByEmail(credentials.email);
+          if (!user?.passwordHash) return null;
 
-        const valid = await verifyPassword(credentials.password, user.passwordHash);
-        if (!valid) return null;
+          const valid = await verifyPassword(credentials.password, user.passwordHash);
+          if (!valid) return null;
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name ?? undefined,
-          userType: user.userType,
-          ghlContactId: user.ghlContactId ?? undefined,
-          airtableHostId: user.airtableHostId ?? undefined,
-          airtableNannyId: user.airtableNannyId ?? undefined,
-        };
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name ?? undefined,
+            userType: user.userType,
+            ghlContactId: user.ghlContactId ?? undefined,
+            airtableHostId: user.airtableHostId ?? undefined,
+            airtableNannyId: user.airtableNannyId ?? undefined,
+            isAdmin: user.isAdmin ?? false,
+            isMatchmaker: user.isMatchmaker ?? false,
+          };
+        } catch (e) {
+          console.error('Auth credentials error:', e instanceof Error ? e.message : e);
+          return null;
+        }
       },
     }),
     GoogleProvider({
@@ -48,6 +55,8 @@ export const authOptions: NextAuthOptions = {
           token.ghlContactId = (user as { ghlContactId?: string }).ghlContactId;
           token.airtableHostId = (user as { airtableHostId?: string }).airtableHostId;
           token.airtableNannyId = (user as { airtableNannyId?: string }).airtableNannyId;
+          token.isAdmin = (user as { isAdmin?: boolean }).isAdmin ?? false;
+          token.isMatchmaker = (user as { isMatchmaker?: boolean }).isMatchmaker ?? false;
         } else if (account?.provider === 'google' && user.email) {
           const { createUser, updateUser } = await import('@/lib/airtable/users');
           const { syncUserToGHL } = await import('@/lib/ghl/sync-user');
@@ -73,6 +82,8 @@ export const authOptions: NextAuthOptions = {
           token.ghlContactId = dbUser.ghlContactId;
           token.airtableHostId = dbUser.airtableHostId;
           token.airtableNannyId = dbUser.airtableNannyId;
+          token.isAdmin = dbUser.isAdmin ?? false;
+          token.isMatchmaker = dbUser.isMatchmaker ?? false;
         }
       }
       if (token.userId && !user) {
@@ -82,6 +93,8 @@ export const authOptions: NextAuthOptions = {
           token.ghlContactId = dbUser.ghlContactId;
           token.airtableHostId = dbUser.airtableHostId;
           token.airtableNannyId = dbUser.airtableNannyId;
+          token.isAdmin = dbUser.isAdmin ?? false;
+          token.isMatchmaker = dbUser.isMatchmaker ?? false;
         }
       }
       return token;
@@ -93,6 +106,8 @@ export const authOptions: NextAuthOptions = {
         (session.user as Record<string, unknown>).ghlContactId = token.ghlContactId;
         (session.user as Record<string, unknown>).airtableHostId = token.airtableHostId;
         (session.user as Record<string, unknown>).airtableNannyId = token.airtableNannyId;
+        (session.user as Record<string, unknown>).isAdmin = token.isAdmin ?? false;
+        (session.user as Record<string, unknown>).isMatchmaker = token.isMatchmaker ?? false;
       }
       return session;
     },

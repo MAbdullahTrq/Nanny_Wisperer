@@ -14,6 +14,10 @@ export interface User {
   airtableHostId?: string;
   airtableNannyId?: string;
   emailVerified?: boolean;
+  /** Staff: can access Admin dashboard (users and subscriptions). */
+  isAdmin?: boolean;
+  /** Staff: can access Matchmaker dashboard (matches only). */
+  isMatchmaker?: boolean;
   createdTime?: string;
 }
 
@@ -90,12 +94,16 @@ export interface Host {
 
 // —— Nanny (onboarding fields) ——
 export type NannyBadge = 'Basic' | 'Verified' | 'Certified';
+/** Nanny vs Au Pair: same /nanny/* flow, different onboarding fields (e.g. pocket money, EU hours). */
+export type NannyType = 'Nanny' | 'Au Pair';
 
 export interface Nanny {
   id?: string;
   createdTime?: string;
   userId?: string;
   badge?: NannyBadge;
+  /** Nanny or Au Pair – determines which onboarding fields are shown (e.g. weekly pocket money, EU regulation). */
+  nannyType?: NannyType;
   location?: string; // convenience / matching (e.g. currentLocation or city)
   tier?: string; // Basic | Verified | Certified (alias for badge)
   // Profile
@@ -131,6 +139,7 @@ export interface Nanny {
   yearsChildcareExperience?: number;
   ageGroupsWorkedWith?: string[];
   specialNeedsExperience?: boolean;
+  specialNeedsDetails?: string;
   maxChildrenComfortable?: number;
   // Skills
   canCook?: boolean;
@@ -148,6 +157,10 @@ export interface Nanny {
   willingToCookNonVegetarian?: boolean;
   // Compensation
   expectedMonthlySalaryNet?: string | number;
+  /** Au Pair: expected weekly pocket money (EU typical). */
+  expectedWeeklyPocketMoney?: string | number;
+  /** Au Pair: acknowledged EU regulation (up to 30 hours/week). */
+  euAuPairHoursAcknowledged?: boolean;
   preferredContractType?: ContractType;
   preferredDaysOff?: string[];
   // About
@@ -157,6 +170,8 @@ export interface Nanny {
 
 // —— Match (T3.2) ——
 export type MatchStatus = 'pending' | 'shortlisted' | 'proceeded' | 'passed';
+/** How the match was created: auto (system), admin_curated (matchmaker), premium_concierge. */
+export type MatchSource = 'auto' | 'admin_curated' | 'premium_concierge';
 
 export interface Match {
   id?: string;
@@ -168,6 +183,12 @@ export interface Match {
   nannyProceed?: boolean;
   bothProceedAt?: string;
   status?: MatchStatus;
+  /** How this match was created (default auto). */
+  matchSource?: MatchSource;
+  /** When shortlist/match was sent to host (ISO date). */
+  sentToHostAt?: string;
+  /** When caregiver was notified (ISO date). */
+  sentToCaregiverAt?: string;
   [key: string]: unknown;
 }
 

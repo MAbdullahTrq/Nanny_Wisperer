@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
 import { getNanny, createNanny, updateNanny } from '@/lib/airtable/nannies';
 import { updateUser } from '@/lib/airtable/users';
-import { validateNannyOnboarding } from '@/lib/validation/nanny-onboarding';
+import { validateNannyOnboarding, validateNannyOnboardingSegment, type NannyOnboardingSegmentId } from '@/lib/validation/nanny-onboarding';
 
 function toAirtableFields(data: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -45,11 +45,42 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  let body: unknown;
+  let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    body = (await request.json()) as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  const segmentId = body.segment as NannyOnboardingSegmentId | undefined;
+  if (segmentId) {
+    const { segment, ...payload } = body;
+    const validated = validateNannyOnboardingSegment(segmentId, payload);
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: validated.error.flatten() },
+        { status: 400 }
+      );
+    }
+    const fields = toAirtableFields({ ...validated.data, userId } as Record<string, unknown>);
+    try {
+      let nannyId: string;
+      if (airtableNannyId) {
+        await updateNanny(airtableNannyId, fields);
+        nannyId = airtableNannyId;
+      } else {
+        const created = await createNanny(fields);
+        nannyId = created.id!;
+        await updateUser(userId, { airtableNannyId: nannyId });
+      }
+      return NextResponse.json({ success: true, nannyId, segment: segmentId });
+    } catch (e) {
+      console.error('Nanny onboarding segment error:', e);
+      return NextResponse.json(
+        { error: 'Something went wrong. Please try again.' },
+        { status: 500 }
+      );
+    }
   }
 
   const validated = validateNannyOnboarding(body);

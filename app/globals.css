@@ -21,6 +21,6 @@
     @apply antialiased;
   }
   body {
-    @apply bg-off-white text-pastel-black font-sans;
+    @apply antialiased bg-off-white text-pastel-black font-sans;
   }
 }

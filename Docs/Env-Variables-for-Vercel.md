@@ -15,7 +15,8 @@ Replace placeholders with your real values. After adding, redeploy.
 | `NEXTAUTH_SECRET` | *(long random string)* | e.g. run: `openssl rand -base64 32` and paste the output. |
 | `JWT_SECRET` | *(long random string)* | For shortlist/CV/interview tokens. Can use same value as `NEXTAUTH_SECRET` or generate another. |
 | `AIRTABLE_API_KEY` | `patxxxxxxxxxxxx` | Airtable **Personal Access Token** (PAT). Create in Airtable → Account → Developer hub; scope read/write on your base. |
-| `AIRTABLE_BASE_ID` | `appxxxxxxxxxxxx` | Your Airtable base ID (from base URL or API docs). |
+| `AIRTABLE_BASE_ID` | `appxxxxxxxxxxxx` | **Base** ID only: from your base URL (`airtable.com/appXXXXXXXX/...`). Must start with `app`. Using a table ID (`tbl...`) causes 404. |
+| `AIRTABLE_USERS_TABLE_NAME` | *(optional)* | Name of the table that stores user accounts. Default: `Users`. Set this if your table has a different name (e.g. `User`). |
 
 ---
 
@@ -57,6 +58,14 @@ Replace placeholders with your real values. After adding, redeploy.
 
 ---
 
+## Optional: Vercel Blob (profile image uploads)
+
+| Variable | Value | Notes |
+|---------|--------|--------|
+| `BLOB_READ_WRITE_TOKEN` | *(auto-set when you create a Blob store)* | In Vercel → Project → **Storage** → create a **Blob** store. The token is added automatically. Required for host/nanny profile image upload. |
+
+---
+
 ## Copy‑paste checklist (fill the placeholders)
 
 ```
@@ -66,6 +75,7 @@ NEXTAUTH_SECRET=<openssl rand -base64 32>
 JWT_SECRET=<same or another random string>
 AIRTABLE_API_KEY=<your Airtable Personal Access Token (PAT)>
 AIRTABLE_BASE_ID=<your Airtable base ID>
+# AIRTABLE_USERS_TABLE_NAME=Users   # only if your table has a different name
 GOOGLE_CLIENT_ID=<if using Google login/calendar>
 GOOGLE_CLIENT_SECRET=<if using Google>
 GOOGLE_CALENDAR_ID=primary
@@ -74,6 +84,7 @@ KAYLEY_REFRESH_TOKEN=<if using VIP overlap>
 GHL_API_KEY=<if using GHL>
 GHL_ACCOUNT_ID=<if using GHL>
 GHL_WEBHOOK_SECRET=<if using GHL webhooks>
+# BLOB_READ_WRITE_TOKEN=<auto-set when you create a Blob store in Vercel → Storage>
 ```
 
 **Note:** Use either `JWT_SECRET` or `TOKEN_SECRET` (the app checks both); one is enough.  

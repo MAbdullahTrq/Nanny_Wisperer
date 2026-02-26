@@ -1,17 +1,20 @@
 /**
  * Airtable Hosts table. T3.1 — getHost, getNanny, getHosts, getNannies live in hosts/nannies.
+ * Uses host-field-names to map between app camelCase and Airtable "Title with spaces" field names.
  */
 
 import type { Host } from '@/types/airtable';
 import { airtableCreate, airtableGet, airtableGetRecord, airtableUpdate } from './client';
+import { airtableFieldsToHost, hostFieldsToAirtable } from './host-field-names';
 
 const TABLE = 'Hosts';
 
 function recordToHost(record: { id: string; fields: Record<string, unknown>; createdTime?: string }): Host {
+  const fields = airtableFieldsToHost(record.fields as Record<string, unknown>);
   return {
     id: record.id,
     createdTime: record.createdTime,
-    ...record.fields,
+    ...fields,
   } as Host;
 }
 
@@ -31,14 +34,16 @@ export async function getHosts(params?: { maxRecords?: number }): Promise<Host[]
 /** Alias for getHosts (used by matching.ts). */
 export const getAllHosts = getHosts;
 
-/** Create a Host record. Fields are sent as-is; omit id/createdTime. */
+/** Create a Host record. Fields in app camelCase are mapped to Airtable field names. */
 export async function createHost(fields: Record<string, unknown>): Promise<Host & { id: string }> {
-  const created = await airtableCreate(TABLE, fields);
+  const airtableFields = hostFieldsToAirtable(fields);
+  const created = await airtableCreate(TABLE, airtableFields);
   return { ...recordToHost(created), id: created.id };
 }
 
-/** Update a Host record. */
+/** Update a Host record. Fields in app camelCase are mapped to Airtable field names. */
 export async function updateHost(id: string, fields: Partial<Record<string, unknown>>): Promise<Host> {
-  const updated = await airtableUpdate(TABLE, id, fields);
+  const airtableFields = hostFieldsToAirtable(fields as Record<string, unknown>);
+  const updated = await airtableUpdate(TABLE, id, airtableFields);
   return recordToHost(updated);
 }

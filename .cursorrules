@@ -1,0 +1,11 @@
+# Nanny Whisperer – Agent instructions
+
+## Deployment
+
+**After making any file changes to this project, always deploy to Vercel production.**
+
+1. Run: `vercel --prod` (from the project root).
+2. On Windows PowerShell use: `cd "<project-root>"; vercel --prod` (semicolon, not `&&`).
+3. Confirm the deployment completes successfully before considering the task done.
+
+Do not skip deployment unless the user explicitly asks not to deploy.

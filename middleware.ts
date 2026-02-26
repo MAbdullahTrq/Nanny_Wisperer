@@ -42,10 +42,34 @@ export async function middleware(request: NextRequest) {
 
   const isHostRoute = path.startsWith('/host');
   const isNannyRoute = path.startsWith('/nanny');
+  const isAdminRoute = path.startsWith('/admin');
+  const isMatchmakerRoute = path.startsWith('/matchmaker');
   const isAuthRoute = path.startsWith('/login') || path.startsWith('/signup') || path.startsWith('/auth');
   const isTokenized =
     path.startsWith('/shortlist/') || path.startsWith('/cv/') || path.startsWith('/interview/') || path.startsWith('/chat/');
   const isPublic = path === '/' || path.startsWith('/forgot-password') || path.startsWith('/reset-password') || path.startsWith('/demo-ui');
+
+  if (isAdminRoute) {
+    if (!token) {
+      const login = new URL('/login', request.url);
+      login.searchParams.set('callbackUrl', path);
+      return NextResponse.redirect(login);
+    }
+    if (!token.isAdmin) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+  }
+
+  if (isMatchmakerRoute) {
+    if (!token) {
+      const login = new URL('/login', request.url);
+      login.searchParams.set('callbackUrl', path);
+      return NextResponse.redirect(login);
+    }
+    if (!token.isMatchmaker) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+  }
 
   if (isHostRoute || isNannyRoute) {
     if (!token) {
@@ -70,6 +94,8 @@ export const config = {
     '/api/:path*',
     '/host/:path*',
     '/nanny/:path*',
+    '/admin/:path*',
+    '/matchmaker/:path*',
     '/login',
     '/signup/:path*',
     '/auth/:path*',

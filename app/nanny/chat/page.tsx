@@ -68,11 +68,11 @@ export default async function NannyChatPage() {
       </p>
 
       {list.length === 0 ? (
-        <Card className="p-6">
-          <p className="text-dark-green/80">
+        <Card className="p-6 bg-light-green/10 border-dark-green/20">
+          <p className="text-dark-green/90">
             No conversations yet. Chat opens when both you and a family have proceeded on a match.
           </p>
-          <Link href="/nanny/matches" className="mt-3 inline-block text-dark-green font-medium hover:underline">
+          <Link href="/nanny/matches" className="mt-3 inline-block text-dark-green font-semibold underline decoration-light-green decoration-2 underline-offset-2 hover:decoration-dark-green transition-colors">
             View your matches
           </Link>
         </Card>

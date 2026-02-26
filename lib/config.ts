@@ -41,6 +41,11 @@ export const config = {
     /** Personal Access Token (PAT) from Airtable → Account → Developer hub */
     apiKey: getEnv('AIRTABLE_API_KEY', ''),
     baseId: getEnv('AIRTABLE_BASE_ID', ''),
+    /** Table name for user accounts; must match the table name in your base exactly (default: Users) */
+    usersTableName: getEnv('AIRTABLE_USERS_TABLE_NAME', 'Users'),
+    /** Chat: table names must match your base exactly (default: Conversations, Messages) */
+    conversationsTableName: getEnv('AIRTABLE_CONVERSATIONS_TABLE_NAME', 'Conversations'),
+    messagesTableName: getEnv('AIRTABLE_MESSAGES_TABLE_NAME', 'Messages'),
   },
 } as const;
 

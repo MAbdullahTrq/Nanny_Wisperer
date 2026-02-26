@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { GoHomeLink } from '@/components/GoHomeLink';
 
 export default function NotFound() {
   return (
@@ -9,8 +9,7 @@ export default function NotFound() {
       <p style={{ color: 'var(--color-dark-green)', marginBottom: 'var(--spacing-lg)' }}>
         The page you're looking for doesn't exist or the link has expired.
       </p>
-      <Link
-        href="/"
+      <GoHomeLink
         style={{
           display: 'inline-block',
           padding: 'var(--spacing-md) var(--spacing-xl)',
@@ -20,9 +19,7 @@ export default function NotFound() {
           textDecoration: 'none',
           fontWeight: 600,
         }}
-      >
-        Go Home
-      </Link>
+      />
     </div>
   );
 }
