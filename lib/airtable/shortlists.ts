@@ -7,17 +7,32 @@ import { airtableCreate, airtableGet, airtableGetRecord, airtableUpdate } from '
 
 const TABLE = 'Shortlists';
 
+function parseStringArray(v: unknown): string[] | undefined {
+  if (Array.isArray(v)) return v as string[];
+  if (typeof v === 'string') {
+    const trimmed = v.trim();
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed;
+      } catch { /* not JSON */ }
+    }
+    if (trimmed) return trimmed.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return undefined;
+}
+
 function recordToShortlist(record: {
   id: string;
   fields: Record<string, unknown>;
   createdTime?: string;
 }): Shortlist {
-  const matchIds = record.fields.matchIds as string[] | undefined;
+  const matchIds = parseStringArray(record.fields.matchIds);
   return {
     id: record.id,
     createdTime: record.createdTime,
     ...record.fields,
-    matchIds: Array.isArray(matchIds) ? matchIds : undefined,
+    matchIds,
   } as Shortlist;
 }
 
