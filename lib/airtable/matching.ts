@@ -14,6 +14,63 @@ export interface MatchScore {
 }
 
 /**
+ * Age-group mapping: hosts use descriptive labels, nannies use age-range labels.
+ * Both directions must be compared for a match.
+ */
+const AGE_GROUP_MAP: Record<string, string[]> = {
+  'infant': ['0-2'],
+  'toddler': ['3-6'],
+  'school age': ['7-12'],
+  'teen': ['teens'],
+  '0-2': ['infant'],
+  '3-6': ['toddler'],
+  '7-12': ['school age'],
+  'teens': ['teen'],
+};
+
+function normalizeAgeGroup(g: string): string[] {
+  const lower = g.toLowerCase().trim();
+  return [lower, ...(AGE_GROUP_MAP[lower] ?? [])];
+}
+
+function ageGroupsOverlap(hostGroups: string[], nannyGroups: string[]): number {
+  const nannyNormalized = nannyGroups.flatMap(normalizeAgeGroup);
+  let matched = 0;
+  for (const hg of hostGroups) {
+    const hostNorm = normalizeAgeGroup(hg);
+    if (hostNorm.some(h => nannyNormalized.includes(h))) matched++;
+  }
+  return matched;
+}
+
+function resolveLocation(record: Host | Nanny): string {
+  return (
+    (record as Host).location ??
+    (record as Host).jobLocationPlace ??
+    (record as Nanny).currentLocation ??
+    record.city ??
+    record.country ??
+    ''
+  ).toString().toLowerCase().trim();
+}
+
+function toArray<T>(v: T | T[] | undefined): T[] {
+  if (v == null) return [];
+  if (Array.isArray(v)) return v;
+  if (typeof v === 'string') {
+    const trimmed = v.trim();
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed;
+      } catch { /* not JSON */ }
+    }
+    return trimmed.split(',').map(s => (s as string).trim()).filter(Boolean) as T[];
+  }
+  return [v];
+}
+
+/**
  * Calculate match score between host and nanny
  */
 export function calculateMatchScore(host: Host, nanny: Nanny): MatchScore {
@@ -22,49 +79,49 @@ export function calculateMatchScore(host: Host, nanny: Nanny): MatchScore {
   let valuesScore = 0;
   let bonusScore = 0;
 
-  // Core Filters (40 points) - Must match
+  // Core Filters (40 points)
   // Location match (10 points)
-  if (host.location && nanny.location) {
-    if (host.location.toLowerCase() === nanny.location.toLowerCase()) {
+  const hostLoc = resolveLocation(host);
+  const nannyLoc = resolveLocation(nanny);
+  if (hostLoc && nannyLoc) {
+    if (hostLoc === nannyLoc) {
       coreScore += 10;
-    } else if (host.location.toLowerCase().includes(nanny.location.toLowerCase()) ||
-               nanny.location.toLowerCase().includes(host.location.toLowerCase())) {
-      coreScore += 7; // Partial match
+    } else if (hostLoc.includes(nannyLoc) || nannyLoc.includes(hostLoc)) {
+      coreScore += 7;
     }
   }
 
   // Start date compatibility (5 points)
   if (host.desiredStartDate && nanny.availableStartDate) {
-    const hostStart = new Date(host.desiredStartDate);
-    const nannyStart = new Date(nanny.availableStartDate);
-    if (nannyStart <= hostStart) {
-      coreScore += 5;
-    }
+    try {
+      const hostStart = new Date(host.desiredStartDate);
+      const nannyStart = new Date(nanny.availableStartDate);
+      if (nannyStart <= hostStart) {
+        coreScore += 5;
+      }
+    } catch { /* ignore */ }
   }
 
   // Live-in/out preference (5 points)
-  if (host.accommodationType && nanny.accommodationPreference) {
-    if (host.accommodationType === nanny.accommodationPreference ||
-        host.accommodationType === 'Either' ||
-        nanny.accommodationPreference === 'Either') {
+  if (host.accommodationType) {
+    if (host.accommodationType === 'Either') {
       coreScore += 5;
     }
   }
 
   // Availability match (10 points)
-  if (host.requiredDays && nanny.availableDays) {
-    const hostDays = Array.isArray(host.requiredDays) ? host.requiredDays : [host.requiredDays];
-    const nannyDays = Array.isArray(nanny.availableDays) ? nanny.availableDays : [nanny.availableDays];
+  const hostDays = toArray(host.requiredDays).filter(Boolean);
+  const nannyDays = toArray(nanny.availableDays).filter(Boolean);
+  if (hostDays.length && nannyDays.length) {
     const overlap = hostDays.filter(day => nannyDays.includes(day));
-    const overlapPercent = overlap.length / hostDays.length;
-    coreScore += Math.round(10 * overlapPercent);
+    coreScore += Math.round(10 * (overlap.length / hostDays.length));
   }
 
   // Age group experience (10 points)
-  if (host.ageGroupExperience && nanny.ageGroups) {
-    const hostGroups = Array.isArray(host.ageGroupExperience) ? host.ageGroupExperience : [host.ageGroupExperience];
-    const nannyGroups = Array.isArray(nanny.ageGroups) ? nanny.ageGroups : [nanny.ageGroups];
-    const matchCount = hostGroups.filter(group => nannyGroups.includes(group)).length;
+  const hostGroups = toArray(host.ageGroupExperienceRequired).filter(Boolean).map(String);
+  const nannyGroups = toArray(nanny.ageGroupsWorkedWith).filter(Boolean).map(String);
+  if (hostGroups.length && nannyGroups.length) {
+    const matchCount = ageGroupsOverlap(hostGroups, nannyGroups);
     if (matchCount === hostGroups.length) {
       coreScore += 10;
     } else if (matchCount > 0) {
@@ -76,88 +133,56 @@ export function calculateMatchScore(host: Host, nanny: Nanny): MatchScore {
   let skillsMatchCount = 0;
   let skillsTotal = 0;
 
-  if (host.cooking && nanny.cooking) {
-    skillsMatchCount++;
-    skillsTotal++;
-  } else if (host.cooking) skillsTotal++;
-
-  if (host.tutoring && nanny.tutoring) {
-    skillsMatchCount++;
-    skillsTotal++;
-  } else if (host.tutoring) skillsTotal++;
-
-  if (host.driving && nanny.driving) {
-    skillsMatchCount++;
-    skillsTotal++;
-  } else if (host.driving) skillsTotal++;
-
-  if (host.travel && nanny.travel) {
-    skillsMatchCount++;
-    skillsTotal++;
-  } else if (host.travel) skillsTotal++;
-
-  if (host.housekeeping && nanny.housekeeping) {
-    skillsMatchCount++;
-    skillsTotal++;
-  } else if (host.housekeeping) skillsTotal++;
+  if (host.cookingForChildren) { skillsTotal++; if (nanny.canCook) skillsMatchCount++; }
+  if (host.tutoringHomework) { skillsTotal++; if (nanny.tutoringHomework) skillsMatchCount++; }
+  if (host.driving) { skillsTotal++; if (nanny.hasDrivingLicence) skillsMatchCount++; }
+  if (host.travelAssistance) { skillsTotal++; if (nanny.okToTravelAndSupport) skillsMatchCount++; }
+  if (host.lightHousekeeping) { skillsTotal++; if (nanny.lightHousekeeping) skillsMatchCount++; }
 
   if (skillsTotal > 0) {
     skillsScore = Math.round((skillsMatchCount / skillsTotal) * MATCH_SCORING.SKILLS);
   }
 
   // Values & Lifestyle (20 points)
-  // Parenting style (5 points)
-  if (host.parentingStyle && nanny.parentingStyle) {
-    if (host.parentingStyle === nanny.parentingStyle) {
-      valuesScore += 5;
-    } else {
-      valuesScore += 2; // Partial match
-    }
+  if (host.parentingStyle && nanny.parentingStylePreference) {
+    valuesScore += host.parentingStyle === nanny.parentingStylePreference ? 5 : 2;
   }
 
-  // Pet compatibility (5 points)
-  if (host.pets !== undefined && nanny.petsComfortable !== undefined) {
-    if (host.pets === nanny.petsComfortable) {
-      valuesScore += 5;
-    }
+  if (host.petsInHome !== undefined && nanny.comfortableWithPets !== undefined) {
+    if (host.petsInHome === nanny.comfortableWithPets) valuesScore += 5;
   }
 
-  // Dietary match (5 points)
-  if (host.dietaryPreferences && nanny.dietaryRestrictions) {
-    // Simple check - can be enhanced
+  if (host.smokingPolicy === 'No smoking' && nanny.smokes) {
+    valuesScore -= 5;
+  } else if (host.smokingPolicy && nanny.smokes === false) {
     valuesScore += 5;
   }
 
-  // Religion/culture (5 points)
-  if (host.religiousBeliefs && nanny.religiousBeliefs) {
-    if (host.religiousBeliefs === nanny.religiousBeliefs) {
-      valuesScore += 5;
-    } else {
-      valuesScore += 2;
-    }
+  if (host.strongReligiousBeliefs !== undefined && nanny.strongReligiousBeliefs !== undefined) {
+    valuesScore += host.strongReligiousBeliefs === nanny.strongReligiousBeliefs ? 5 : 2;
   }
 
+  valuesScore = Math.max(0, Math.min(valuesScore, MATCH_SCORING.VALUES));
+
   // Bonus (20 points)
-  // Language fluency (10 points)
-  if (host.primaryLanguage && nanny.languages) {
-    const nannyLanguages = Array.isArray(nanny.languages) ? nanny.languages : [nanny.languages];
-    if (nannyLanguages.includes(host.primaryLanguage)) {
+  if (host.primaryLanguageRequired && nanny.languageSkills) {
+    const nannyLangs = typeof nanny.languageSkills === 'string'
+      ? nanny.languageSkills.toLowerCase()
+      : Object.keys(nanny.languageSkills).join(' ').toLowerCase();
+    if (nannyLangs.includes(host.primaryLanguageRequired.toLowerCase())) {
       bonusScore += 10;
     }
   }
 
-  // Salary alignment (5 points)
-  if (host.salaryRange && nanny.expectedSalary) {
-    // Simple range check - can be enhanced
+  if (host.monthlySalaryRange && nanny.expectedMonthlySalaryNet != null) {
     bonusScore += 5;
   }
 
-  // Certifications (5 points)
-  if (nanny.tier === 'Certified') {
-    bonusScore += 5;
-  } else if (nanny.tier === 'Verified') {
-    bonusScore += 3;
-  }
+  const badge = nanny.badge ?? nanny.tier;
+  if (badge === 'Certified') bonusScore += 5;
+  else if (badge === 'Verified') bonusScore += 3;
+
+  bonusScore = Math.min(bonusScore, MATCH_SCORING.BONUS);
 
   const totalScore = coreScore + skillsScore + valuesScore + bonusScore;
 
@@ -174,27 +199,27 @@ export function calculateMatchScore(host: Host, nanny: Nanny): MatchScore {
  * Check if match passes must-match filters
  */
 export function passesMustMatchFilters(host: Host, nanny: Nanny): boolean {
-  // Location must match (at least partially)
-  if (host.location && nanny.location) {
-    const hostLoc = host.location.toLowerCase();
-    const nannyLoc = nanny.location.toLowerCase();
+  const hostLoc = resolveLocation(host);
+  const nannyLoc = resolveLocation(nanny);
+  if (hostLoc && nannyLoc) {
     if (!hostLoc.includes(nannyLoc) && !nannyLoc.includes(hostLoc)) {
       return false;
     }
   }
 
-  // Age groups must match
-  if (host.ageGroupExperience && nanny.ageGroups) {
-    const hostGroups = Array.isArray(host.ageGroupExperience) ? host.ageGroupExperience : [host.ageGroupExperience];
-    const nannyGroups = Array.isArray(nanny.ageGroups) ? nanny.ageGroups : [nanny.ageGroups];
-    const hasMatch = hostGroups.some(group => nannyGroups.includes(group));
-    if (!hasMatch) {
-      return false;
-    }
+  const hostDays = toArray(host.requiredDays).filter(Boolean);
+  const nannyDays = toArray(nanny.availableDays).filter(Boolean);
+  if (hostDays.length > 0 && nannyDays.length > 0) {
+    if (!hostDays.some(d => nannyDays.includes(d))) return false;
   }
 
-  // Special needs must match if required
-  if (host.specialNeeds && !nanny.specialNeedsExperience) {
+  const hostGroups = toArray(host.ageGroupExperienceRequired).filter(Boolean).map(String);
+  const nannyGroups = toArray(nanny.ageGroupsWorkedWith).filter(Boolean).map(String);
+  if (hostGroups.length > 0 && nannyGroups.length > 0) {
+    if (ageGroupsOverlap(hostGroups, nannyGroups) === 0) return false;
+  }
+
+  if (host.specialNeedsCare && !nanny.specialNeedsExperience) {
     return false;
   }
 
@@ -210,48 +235,41 @@ export async function findMatchesForHost(hostId: string): Promise<Array<{ nanny:
     throw new Error('Host not found');
   }
 
-  // Get nannies based on host tier
-  let nannies;
+  let nannies: Nanny[];
   if (host.tier === 'VIP') {
-    // VIP can see all nannies, prioritize Certified
     const certified = await getNanniesByTier('Certified');
     const verified = await getNanniesByTier('Verified');
     const basic = await getNanniesByTier('Basic');
     nannies = [...certified, ...verified, ...basic];
   } else {
-    // Standard and Fast Track see Basic and Verified
     const verified = await getNanniesByTier('Verified');
     const basic = await getNanniesByTier('Basic');
     nannies = [...verified, ...basic];
   }
 
-  // Calculate scores and filter
+  // Fallback: if tier-based filtering returns no nannies, fetch all
+  if (nannies.length === 0) {
+    nannies = await getAllNannies();
+  }
+
   const matches: Array<{ nanny: Nanny; score: MatchScore }> = [];
 
-  for (const nannyRecord of nannies) {
-    const nanny = (nannyRecord.fields ?? nannyRecord) as Nanny;
-
-    // Check must-match filters (host.fields is the flat Host shape from Airtable)
-    const hostFields = host.fields ?? host;
-    if (!passesMustMatchFilters(hostFields as Host, nanny)) {
+  for (const nanny of nannies) {
+    if (!passesMustMatchFilters(host, nanny)) {
       continue;
     }
 
-    // Calculate score
-    const score = calculateMatchScore(hostFields as Host, nanny);
+    const score = calculateMatchScore(host, nanny);
 
-    // Only include matches above minimum threshold
     if (score.total >= MATCH_THRESHOLDS.REVIEW) {
       matches.push({ nanny, score });
     }
   }
 
-  // Sort by score (descending) and tier priority
   matches.sort((a, b) => {
     if (a.score.total !== b.score.total) {
       return b.score.total - a.score.total;
     }
-    // If scores are equal, prioritize Certified > Verified > Basic
     const tierPriority = { Certified: 3, Verified: 2, Basic: 1 };
     return (tierPriority[b.nanny.tier as keyof typeof tierPriority] || 0) -
            (tierPriority[a.nanny.tier as keyof typeof tierPriority] || 0);
@@ -264,12 +282,10 @@ export async function findMatchesForHost(hostId: string): Promise<Array<{ nanny:
  * Create matches and shortlist for a host
  */
 export async function createMatchesAndShortlist(hostId: string): Promise<string> {
-  // Find matches
   const matches = await findMatchesForHost(hostId);
 
-  // Create match records in Airtable
   const matchIds: string[] = [];
-  for (const { nanny, score } of matches.slice(0, 10)) { // Top 10 matches
+  for (const { nanny, score } of matches.slice(0, 10)) {
     const match = await createMatch({
       hostId,
       nannyId: nanny.id || '',
@@ -279,7 +295,6 @@ export async function createMatchesAndShortlist(hostId: string): Promise<string>
     matchIds.push(match.id!);
   }
 
-  // Create shortlist
   const shortlist = await createShortlist({
     hostId,
     matchIds,
