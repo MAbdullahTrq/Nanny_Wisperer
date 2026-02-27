@@ -19,7 +19,7 @@ All required secrets are injected as environment variables in Cloud Agent VMs. A
 
 ### Gotchas
 
-- **ESLint config**: The repo ships without an `.eslintrc.json`. Running `next lint` interactively prompts for config selection. To run non-interactively, create `.eslintrc.json` with `{"extends": "next/core-web-vitals"}`. However, `next build` will fail if this file exists because of pre-existing lint errors in the codebase. Either remove the file before building, or add `eslint: { ignoreDuringBuilds: true }` to `next.config.mjs`.
+- **ESLint config**: `.eslintrc.json` (extends `next/core-web-vitals`) is committed for standalone `npm run lint`. `next.config.mjs` has `eslint.ignoreDuringBuilds: true` so the pre-existing lint errors don't break `npm run build`.
 - **NEXT_PUBLIC_APP_URL**: The signup flow redirects to the value of `NEXT_PUBLIC_APP_URL` after creating a user. Set it to `http://localhost:3000` for local testing; the injected env var may point to the Vercel production URL.
 - **No automated test suite**: The project has no unit/integration tests. Validation is done via `npm run lint` and `npm run build`.
 - **Deployment rule in `.cursorrules`**: The repo's `.cursorrules` mandates `vercel --prod` after file changes. For environment setup, this is not required.
