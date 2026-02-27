@@ -7,7 +7,18 @@ import type { Host, Nanny } from '@/types/airtable';
 
 function toArray<T>(v: T | T[] | undefined): T[] {
   if (v == null) return [];
-  return Array.isArray(v) ? v : [v];
+  if (Array.isArray(v)) return v;
+  if (typeof v === 'string') {
+    const trimmed = v.trim();
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed;
+      } catch { /* not JSON */ }
+    }
+    return trimmed.split(',').map(s => (s as string).trim()).filter(Boolean) as T[];
+  }
+  return [v];
 }
 
 function locationMatch(host: Host, nanny: Nanny): boolean {
@@ -47,14 +58,32 @@ function availabilityMatch(host: Host, nanny: Nanny): boolean {
   return overlap.length > 0;
 }
 
+const AGE_GROUP_MAP: Record<string, string[]> = {
+  'infant': ['0-2'],
+  'toddler': ['3-6'],
+  'school age': ['7-12'],
+  'teen': ['teens'],
+  '0-2': ['infant'],
+  '3-6': ['toddler'],
+  '7-12': ['school age'],
+  'teens': ['teen'],
+};
+
+function normalizeAgeGroup(g: string): string[] {
+  const lower = g.toLowerCase().trim();
+  return [lower, ...(AGE_GROUP_MAP[lower] ?? [])];
+}
+
 function ageGroupMatch(host: Host, nanny: Nanny): boolean {
-  const hostGroups = toArray(host.ageGroupExperienceRequired).map((g) => String(g).toLowerCase());
-  const nannyGroups = toArray(nanny.ageGroupsWorkedWith).map((g) => String(g).toLowerCase());
+  const hostGroups = toArray(host.ageGroupExperienceRequired).map((g) => String(g));
+  const nannyGroups = toArray(nanny.ageGroupsWorkedWith).map((g) => String(g));
   if (hostGroups.length === 0) return true;
   if (nannyGroups.length === 0) return false;
-  const allMatch = hostGroups.every((hg) =>
-    nannyGroups.some((ng) => ng.includes(hg) || hg.includes(ng))
-  );
+  const nannyNormalized = nannyGroups.flatMap(normalizeAgeGroup);
+  const allMatch = hostGroups.every((hg) => {
+    const hostNorm = normalizeAgeGroup(hg);
+    return hostNorm.some(h => nannyNormalized.includes(h));
+  });
   return allMatch;
 }
 

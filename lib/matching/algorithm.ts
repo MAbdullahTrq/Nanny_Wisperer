@@ -20,7 +20,18 @@ export interface MatchScoreResult {
 
 function toArray<T>(v: T | T[] | undefined): T[] {
   if (v == null) return [];
-  return Array.isArray(v) ? v : [v];
+  if (Array.isArray(v)) return v;
+  if (typeof v === 'string') {
+    const trimmed = v.trim();
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed;
+      } catch { /* not JSON */ }
+    }
+    return trimmed.split(',').map(s => (s as string).trim()).filter(Boolean) as T[];
+  }
+  return [v];
 }
 
 function coreScore(host: Host, nanny: Nanny): number {
@@ -53,12 +64,16 @@ function coreScore(host: Host, nanny: Nanny): number {
     s += Math.round(10 * (overlap.length / hostDays.length));
   }
 
-  const hostGroups = toArray(host.ageGroupExperienceRequired);
-  const nannyGroups = toArray(nanny.ageGroupsWorkedWith);
+  const hostGroups = toArray(host.ageGroupExperienceRequired).map(String);
+  const nannyGroups = toArray(nanny.ageGroupsWorkedWith).map(String);
   if (hostGroups.length && nannyGroups.length) {
-    const matchCount = hostGroups.filter((hg) =>
-      nannyGroups.some((ng) => String(ng).toLowerCase().includes(String(hg).toLowerCase()))
-    ).length;
+    const AGE_MAP: Record<string, string[]> = {
+      'infant': ['0-2'], 'toddler': ['3-6'], 'school age': ['7-12'], 'teen': ['teens'],
+      '0-2': ['infant'], '3-6': ['toddler'], '7-12': ['school age'], 'teens': ['teen'],
+    };
+    const normalize = (g: string) => { const l = g.toLowerCase().trim(); return [l, ...(AGE_MAP[l] ?? [])]; };
+    const nannyNorm = nannyGroups.flatMap(normalize);
+    const matchCount = hostGroups.filter((hg) => normalize(hg).some(h => nannyNorm.includes(h))).length;
     s += hostGroups.length === matchCount ? 10 : Math.round(10 * (matchCount / hostGroups.length));
   }
 
