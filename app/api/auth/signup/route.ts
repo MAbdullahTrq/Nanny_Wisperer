@@ -4,6 +4,9 @@ import { getUserByEmail, createUser, updateUser } from '@/lib/airtable/users';
 import { hashPassword, validateEmail, validatePassword } from '@/lib/auth/password';
 import { syncUserToGHL } from '@/lib/ghl/sync-user';
 import { sendSignupToGHLInbound } from '@/lib/ghl/inbound-webhook';
+import { createVerificationToken } from '@/lib/airtable/email-verification';
+import { sendWelcomeEmail, sendVerificationEmail } from '@/lib/email';
+import crypto from 'crypto';
 import type { UserType } from '@/types/airtable';
 
 /** Airtable base IDs start with "app"; table IDs start with "tbl". Using a table ID as base causes 404. */
@@ -137,6 +140,18 @@ export async function POST(request: Request) {
       userId: user.id,
       source: 'nanny-whisperer',
     });
+
+    const displayName = name || email;
+
+    // Send welcome email (fire-and-forget)
+    sendWelcomeEmail({ to: email, name: displayName, userType }).catch(() => {});
+
+    // Send email verification (fire-and-forget)
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    createVerificationToken(email, verificationToken, verificationExpires)
+      .then(() => sendVerificationEmail({ to: email, name: displayName, token: verificationToken }))
+      .catch((err) => console.error('Verification email error:', err));
 
     return NextResponse.json({
       success: true,

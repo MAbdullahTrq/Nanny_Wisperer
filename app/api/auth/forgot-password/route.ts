@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createResetToken } from '@/lib/airtable/password-reset';
 import { getUserByEmail } from '@/lib/airtable/users';
 import { validateEmail } from '@/lib/auth/password';
+import { sendForgotPasswordEmail } from '@/lib/email';
 import { config } from '@/lib/config';
 import crypto from 'crypto';
 
@@ -31,7 +32,12 @@ export async function POST(request: Request) {
     if (config.app.nodeEnv === 'development') {
       console.log('[Forgot password] Reset link:', resetUrl);
     }
-    // TODO: Send email via Resend/Nodemailer: await sendEmail({ to: email, subject: 'Reset password', html: `...${resetUrl}...` });
+
+    await sendForgotPasswordEmail({
+      to: email,
+      name: user.name || email,
+      resetUrl,
+    });
 
     return NextResponse.json({
       message: 'If an account exists with this email, you will receive a reset link.',

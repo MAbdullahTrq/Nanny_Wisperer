@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import { getUserByEmail, getUserById } from '@/lib/airtable/users';
 import { verifyPassword, validateEmail } from '@/lib/auth/password';
+import { sendLoginNotificationEmail } from '@/lib/email';
 import { config } from '@/lib/config';
 
 export const authOptions: NextAuthOptions = {
@@ -156,6 +157,19 @@ export const authOptions: NextAuthOptions = {
       if (url.startsWith('/')) return `${baseUrl}${url}`;
       if (new URL(url).origin === baseUrl) return url;
       return baseUrl;
+    },
+  },
+  events: {
+    async signIn({ user, account }) {
+      if (account?.provider === 'impersonation') return;
+      if (!user.email) return;
+
+      sendLoginNotificationEmail({
+        to: user.email,
+        name: user.name || user.email,
+        ipAddress: 'Unknown',
+        userAgent: account?.provider === 'google' ? 'Google OAuth' : 'Email & Password',
+      }).catch(() => {});
     },
   },
   session: { strategy: 'jwt', maxAge: 30 * 24 * 60 * 60 },

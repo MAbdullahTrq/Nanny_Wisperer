@@ -60,6 +60,18 @@ Replace placeholders with your real values. After adding, redeploy.
 
 ---
 
+## Optional: SMTP2Go (email notifications)
+
+| Variable | Value | Notes |
+|---------|--------|--------|
+| `SMTP2GO_API_KEY` | *(your API key)* | From SMTP2Go dashboard → Settings → API Keys. |
+| `SMTP2GO_FROM_EMAIL` | `noreply@nannywhisperer.com` | "From" email address. Must be a verified sender domain in SMTP2Go. Default: `noreply@nannywhisperer.com`. |
+| `SMTP2GO_FROM_NAME` | `Nanny Whisperer` | Display name for the "From" field. Default: `Nanny Whisperer`. |
+
+**Setup steps:** Log in to [SMTP2Go](https://www.smtp2go.com/) → Settings → API Keys → create a key. Verify your sender domain under Settings → Sender Domains.
+
+---
+
 ## Optional: Vercel Blob (profile image uploads)
 
 | Variable | Value | Notes |
@@ -88,6 +100,9 @@ KAYLEY_REFRESH_TOKEN=<if using VIP overlap>
 GHL_API_KEY=<if using GHL>
 GHL_ACCOUNT_ID=<if using GHL>
 GHL_WEBHOOK_SECRET=<if using GHL webhooks>
+SMTP2GO_API_KEY=<your SMTP2Go API key>
+SMTP2GO_FROM_EMAIL=noreply@nannywhisperer.com
+SMTP2GO_FROM_NAME=Nanny Whisperer
 # BLOB_READ_WRITE_TOKEN=<auto-set when you create a Blob store in Vercel → Storage>
 ```
 

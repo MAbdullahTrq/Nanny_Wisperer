@@ -43,6 +43,26 @@ export async function getUserById(id: string): Promise<User | null> {
   return recordToUser(record as { id: string; fields: Record<string, unknown>; createdTime?: string });
 }
 
+const BATCH_SIZE = 50;
+
+/** Fetch multiple users by ID in batches (for admin list enrichment). Returns map id -> User. */
+export async function getUsersByIds(ids: string[]): Promise<Map<string, User>> {
+  const unique = Array.from(new Set(ids)).filter(Boolean);
+  const map = new Map<string, User>();
+  for (let i = 0; i < unique.length; i += BATCH_SIZE) {
+    const chunk = unique.slice(i, i + BATCH_SIZE);
+    const formula = `OR(${chunk.map((id) => `RECORD_ID()='${id.replace(/'/g, "\\'")}'`).join(',')})`;
+    const { records } = await airtableGet<Record<string, unknown>>(USERS_TABLE(), {
+      filterByFormula: formula,
+      maxRecords: chunk.length,
+    });
+    for (const rec of records as Array<{ id: string; fields: Record<string, unknown>; createdTime?: string }>) {
+      map.set(rec.id, recordToUser(rec));
+    }
+  }
+  return map;
+}
+
 export async function createUser(data: {
   email: string;
   name?: string;

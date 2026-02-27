@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
 import { getUserById, updateUser } from '@/lib/airtable/users';
 import { hashPassword, validatePassword } from '@/lib/auth/password';
+import { sendPasswordChangedEmail } from '@/lib/email';
 
 export async function POST(
   _request: Request,
@@ -43,6 +44,10 @@ export async function POST(
 
   const passwordHash = await hashPassword(password);
   await updateUser(userId, { passwordHash });
+
+  if (user.email) {
+    sendPasswordChangedEmail({ to: user.email, name: user.name || user.email }).catch(() => {});
+  }
 
   return NextResponse.json({ message: 'Password updated' });
 }

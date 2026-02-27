@@ -37,6 +37,11 @@ export const config = {
     /** Inbound webhook URL for signup form data (Host/Nanny) */
     inboundWebhookUrl: getEnv('GHL_INBOUND_WEBHOOK_URL', ''),
   },
+  smtp2go: {
+    apiKey: getEnv('SMTP2GO_API_KEY', ''),
+    fromEmail: getEnv('SMTP2GO_FROM_EMAIL', 'noreply@nannywhisperer.com'),
+    fromName: getEnv('SMTP2GO_FROM_NAME', 'Nanny Whisperer'),
+  },
   airtable: {
     /** Personal Access Token (PAT) from Airtable → Account → Developer hub */
     apiKey: getEnv('AIRTABLE_API_KEY', ''),

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { findValidResetToken, invalidateResetToken } from '@/lib/airtable/password-reset';
 import { getUserByEmail, updateUser } from '@/lib/airtable/users';
 import { hashPassword, validatePassword } from '@/lib/auth/password';
+import { sendPasswordChangedEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -37,6 +38,12 @@ export async function POST(request: Request) {
     const passwordHash = await hashPassword(password);
     await updateUser(user.id, { passwordHash });
     await invalidateResetToken(token);
+
+    // Notify user that password was changed (fire-and-forget)
+    sendPasswordChangedEmail({
+      to: user.email,
+      name: user.name || user.email,
+    }).catch(() => {});
 
     return NextResponse.json({
       message: 'Password updated. You can now log in.',

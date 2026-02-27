@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
 import { getUserById, updateUser } from '@/lib/airtable/users';
+import { sendAccountLockedEmail, sendAccountUnlockedEmail } from '@/lib/email';
 
 export async function PATCH(
   request: Request,
@@ -35,6 +36,11 @@ export async function PATCH(
   }
 
   await updateUser(userId, { locked: body.locked });
+
+  if (user.email) {
+    const emailFn = body.locked ? sendAccountLockedEmail : sendAccountUnlockedEmail;
+    emailFn({ to: user.email, name: user.name || user.email }).catch(() => {});
+  }
 
   return NextResponse.json({ locked: body.locked });
 }
