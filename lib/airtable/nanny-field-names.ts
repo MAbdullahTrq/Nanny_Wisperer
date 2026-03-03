@@ -9,7 +9,7 @@ import { config } from '@/lib/config';
 const NANNY_FIELD_TO_AIRTABLE: Record<string, string> = {};
 
 /** Keys to omit when the base doesn't have these columns (avoids UNKNOWN_FIELD_NAME). */
-const OMIT_WHEN_NOT_IN_BASE = new Set<string>(['nannyType']);
+const OMIT_WHEN_NOT_IN_BASE = new Set<string>(['nannyType', 'euAuPairHoursAcknowledged', 'expectedWeeklyPocketMoney']);
 
 /** Reverse map: Airtable field name → app camelCase (for reading) */
 const AIRTABLE_TO_NANNY_FIELD: Record<string, string> = {};
