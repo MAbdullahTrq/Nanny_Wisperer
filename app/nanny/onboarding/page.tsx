@@ -76,9 +76,12 @@ function parseLanguageSkills(value: string | Record<string, string> | undefined)
 }
 
 function serializeLanguageSkills(rows: LanguageSkillRow[]): string {
-  const filled = rows.filter((r) => rowDisplayLanguage(r).trim() || r.level.trim());
-  if (filled.length === 0) return '';
-  return filled.map((r) => {
+  if (rows.length === 0) return '';
+  const hasIncomplete = rows.some(r => !rowDisplayLanguage(r).trim() || !r.level.trim());
+  if (hasIncomplete) {
+    return JSON.stringify(rows);
+  }
+  return rows.map((r) => {
     const name = rowDisplayLanguage(r);
     return r.level ? `${name}: ${r.level}` : name;
   }).join(', ');
