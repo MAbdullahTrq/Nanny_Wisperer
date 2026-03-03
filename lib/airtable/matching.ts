@@ -1,8 +1,9 @@
 import { getAllHosts } from './hosts';
-import { getAllNannies, getNanniesByTier } from './nannies';
+import { getNanniesByTier } from './nannies';
 import { createMatch } from './matches';
 import { createShortlist } from './shortlists';
-import { MATCH_SCORING, MATCH_THRESHOLDS, TIER_PRIORITY } from '@/config/constants';
+import { MATCH_SCORING, MATCH_THRESHOLDS } from '@/config/constants';
+import { toArray, ageGroupsOverlap } from '@/lib/matching/utils';
 import type { Host, Nanny, Match } from '@/types/airtable';
 
 export interface MatchScore {
@@ -11,36 +12,6 @@ export interface MatchScore {
   skills: number;
   values: number;
   bonus: number;
-}
-
-/**
- * Age-group mapping: hosts use descriptive labels, nannies use age-range labels.
- * Both directions must be compared for a match.
- */
-const AGE_GROUP_MAP: Record<string, string[]> = {
-  'infant': ['0-2'],
-  'toddler': ['3-6'],
-  'school age': ['7-12'],
-  'teen': ['teens'],
-  '0-2': ['infant'],
-  '3-6': ['toddler'],
-  '7-12': ['school age'],
-  'teens': ['teen'],
-};
-
-function normalizeAgeGroup(g: string): string[] {
-  const lower = g.toLowerCase().trim();
-  return [lower, ...(AGE_GROUP_MAP[lower] ?? [])];
-}
-
-function ageGroupsOverlap(hostGroups: string[], nannyGroups: string[]): number {
-  const nannyNormalized = nannyGroups.flatMap(normalizeAgeGroup);
-  let matched = 0;
-  for (const hg of hostGroups) {
-    const hostNorm = normalizeAgeGroup(hg);
-    if (hostNorm.some(h => nannyNormalized.includes(h))) matched++;
-  }
-  return matched;
 }
 
 function resolveLocation(record: Host | Nanny): string {
@@ -52,22 +23,6 @@ function resolveLocation(record: Host | Nanny): string {
     record.country ??
     ''
   ).toString().toLowerCase().trim();
-}
-
-function toArray<T>(v: T | T[] | undefined): T[] {
-  if (v == null) return [];
-  if (Array.isArray(v)) return v;
-  if (typeof v === 'string') {
-    const trimmed = v.trim();
-    if (trimmed.startsWith('[')) {
-      try {
-        const parsed = JSON.parse(trimmed);
-        if (Array.isArray(parsed)) return parsed;
-      } catch { /* not JSON */ }
-    }
-    return trimmed.split(',').map(s => (s as string).trim()).filter(Boolean) as T[];
-  }
-  return [v];
 }
 
 /**
@@ -103,10 +58,10 @@ export function calculateMatchScore(host: Host, nanny: Nanny): MatchScore {
   }
 
   // Live-in/out preference (5 points)
-  if (host.accommodationType) {
-    if (host.accommodationType === 'Either') {
-      coreScore += 5;
-    }
+  const hostAcc = host.accommodationType;
+  const nannyAcc = (nanny as { accommodationPreference?: string }).accommodationPreference;
+  if (hostAcc && nannyAcc && (hostAcc === nannyAcc || hostAcc === 'Either' || nannyAcc === 'Either')) {
+    coreScore += 5;
   }
 
   // Availability match (10 points)
@@ -245,11 +200,6 @@ export async function findMatchesForHost(hostId: string): Promise<Array<{ nanny:
     const verified = await getNanniesByTier('Verified');
     const basic = await getNanniesByTier('Basic');
     nannies = [...verified, ...basic];
-  }
-
-  // Fallback: if tier-based filtering returns no nannies, fetch all
-  if (nannies.length === 0) {
-    nannies = await getAllNannies();
   }
 
   const matches: Array<{ nanny: Nanny; score: MatchScore }> = [];
