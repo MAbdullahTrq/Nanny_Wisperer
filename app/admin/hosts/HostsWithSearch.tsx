@@ -7,6 +7,9 @@ import HostsTableBody from './HostsTableBody';
 
 export type HostWithEmail = Host & { email?: string };
 
+type SortKey = 'name' | 'location' | 'tier' | 'startDate';
+type SortDir = 'asc' | 'desc';
+
 const HOST_SEARCH_FIELDS: (keyof HostWithEmail)[] = [
   'firstName',
   'lastName',
@@ -33,12 +36,56 @@ function matchSearch(host: HostWithEmail, query: string): boolean {
   return terms.every((term) => haystack.includes(term));
 }
 
+function getSortValue(host: HostWithEmail, key: SortKey): string {
+  switch (key) {
+    case 'name':
+      return `${(host.firstName ?? '').trim()} ${(host.lastName ?? '').trim()}`.trim().toLowerCase() || (host.email ?? '').toLowerCase();
+    case 'location':
+      return (host.location ?? host.city ?? '').toString().toLowerCase();
+    case 'tier':
+      return (host.tier ?? '').toString().toLowerCase();
+    case 'startDate': {
+      const d = host.desiredStartDate;
+      return d ?? '';
+    }
+    default:
+      return '';
+  }
+}
+
+function compareHosts(a: HostWithEmail, b: HostWithEmail, key: SortKey, dir: SortDir): number {
+  const va = getSortValue(a, key);
+  const vb = getSortValue(b, key);
+  const cmp = va.localeCompare(vb, undefined, { numeric: key === 'startDate' });
+  return dir === 'asc' ? cmp : -cmp;
+}
+
 export default function HostsWithSearch({ hosts }: { hosts: HostWithEmail[] }) {
   const [query, setQuery] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>('name');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   const filtered = useMemo(() => {
     return hosts.filter((h) => matchSearch(h, query));
   }, [hosts, query]);
+
+  const sorted = useMemo(() => {
+    const list = [...filtered];
+    list.sort((a, b) => compareHosts(a, b, sortKey, sortDir));
+    return list;
+  }, [filtered, sortKey, sortDir]);
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }
+
+  const thClass = 'py-2 pr-4 font-medium text-pastel-black';
+  const thSortableClass = `${thClass} cursor-pointer select-none hover:text-dark-green hover:underline`;
 
   return (
     <>
@@ -69,14 +116,42 @@ export default function HostsWithSearch({ hosts }: { hosts: HostWithEmail[] }) {
           <table className="w-full text-sm text-left">
             <thead>
               <tr className="border-b border-dark-green/20">
-                <th className="py-2 pr-4 font-medium text-pastel-black">Name / Email</th>
-                <th className="py-2 pr-4 font-medium text-pastel-black">Location</th>
-                <th className="py-2 pr-4 font-medium text-pastel-black">Tier</th>
-                <th className="py-2 pr-4 font-medium text-pastel-black">Start date</th>
-                <th className="py-2 pr-4 font-medium text-pastel-black">User</th>
+                <th
+                  className={thSortableClass}
+                  onClick={() => handleSort('name')}
+                  role="columnheader"
+                  aria-sort={sortKey === 'name' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                >
+                  Name / Email {sortKey === 'name' && (sortDir === 'asc' ? '↑' : '↓')}
+                </th>
+                <th
+                  className={thSortableClass}
+                  onClick={() => handleSort('location')}
+                  role="columnheader"
+                  aria-sort={sortKey === 'location' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                >
+                  Location {sortKey === 'location' && (sortDir === 'asc' ? '↑' : '↓')}
+                </th>
+                <th
+                  className={thSortableClass}
+                  onClick={() => handleSort('tier')}
+                  role="columnheader"
+                  aria-sort={sortKey === 'tier' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                >
+                  Tier {sortKey === 'tier' && (sortDir === 'asc' ? '↑' : '↓')}
+                </th>
+                <th
+                  className={thSortableClass}
+                  onClick={() => handleSort('startDate')}
+                  role="columnheader"
+                  aria-sort={sortKey === 'startDate' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                >
+                  Start date {sortKey === 'startDate' && (sortDir === 'asc' ? '↑' : '↓')}
+                </th>
+                <th className={thClass}>User</th>
               </tr>
             </thead>
-            <HostsTableBody hosts={filtered} />
+            <HostsTableBody hosts={sorted} />
           </table>
         </div>
       )}
