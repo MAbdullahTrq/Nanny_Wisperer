@@ -2,8 +2,8 @@ import { getServerSession } from 'next-auth';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { authOptions } from '@/lib/auth';
-import { getConversation, getMessages } from '@/lib/airtable/chat';
-import { getHost } from '@/lib/airtable/hosts';
+import { getConversation, getMessages } from '@/lib/db/chat';
+import { getHost } from '@/lib/db/hosts';
 import ChatThreadClient from '@/app/host/chat/[conversationId]/ChatThreadClient';
 
 interface PageProps {

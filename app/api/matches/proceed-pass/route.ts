@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { validateToken } from '@/lib/auth/tokens';
-import { getMatch, updateMatch } from '@/lib/airtable/matches';
+import { getMatch, updateMatch } from '@/lib/db/matches';
 import {
   getConversationByMatchId,
   createConversation,
-} from '@/lib/airtable/chat';
+} from '@/lib/db/chat';
 
 export async function POST(request: Request) {
   let body: { token?: string; choice?: string };

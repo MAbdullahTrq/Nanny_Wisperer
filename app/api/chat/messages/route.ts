@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
-import { getConversation, getMessages } from '@/lib/airtable/chat';
+import { getConversation, getMessages } from '@/lib/db/chat';
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);

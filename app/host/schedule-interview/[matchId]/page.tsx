@@ -2,8 +2,8 @@ import { getServerSession } from 'next-auth';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { authOptions } from '@/lib/auth';
-import { getMatch } from '@/lib/airtable/matches';
-import { getInterviewRequestByMatchId } from '@/lib/airtable/interview-requests';
+import { getMatch } from '@/lib/db/matches';
+import { getInterviewRequestByMatchId } from '@/lib/db/interview-requests';
 import { Card } from '@/components/ui';
 import ScheduleInterviewForm from './ScheduleInterviewForm';
 

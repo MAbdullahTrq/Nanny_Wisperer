@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
-import { createMatch } from '@/lib/airtable/matches';
-import { createShortlist } from '@/lib/airtable/shortlists';
+import { createMatch } from '@/lib/db/matches';
+import { createShortlist } from '@/lib/db/shortlists';
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);

@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
-import { getUserById, updateUser } from '@/lib/airtable/users';
+import { getUserById, updateUser } from '@/lib/db/users';
 import { hashPassword, validatePassword } from '@/lib/auth/password';
 import { sendPasswordChangedEmail } from '@/lib/email';
 

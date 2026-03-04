@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateToken } from '@/lib/auth/tokens';
-import { getInterviewByMatchId, updateInterviewRequest } from '@/lib/airtable/interviews';
-import { getMatch } from '@/lib/airtable/matches';
-import { getHost } from '@/lib/airtable/hosts';
+import { getInterviewByMatchId, updateInterviewRequest } from '@/lib/db/interviews';
+import { getMatch } from '@/lib/db/matches';
+import { getHost } from '@/lib/db/hosts';
 import { createFastTrackMeeting, createVIPMeeting } from '@/lib/zoom/meetings';
-import { updateInterviewWithZoom } from '@/lib/airtable/interviews';
+import { updateInterviewWithZoom } from '@/lib/db/interviews';
 import { ghlClient } from '@/lib/ghl/client';
 import { env } from '@/config/env';
 
@@ -41,11 +41,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const matchFields = (match as { fields?: { hostId?: string; nannyId?: string } }).fields ?? {};
-    const interviewFields = (interview as { id?: string; fields?: { tier?: string } }).fields ?? {};
+    const hostId = match.hostId ?? '';
+    const nannyId = match.nannyId ?? '';
+    const isVip = !!(interview as { isVip?: boolean }).isVip;
+    const interviewId = (interview as { id?: string }).id ?? '';
 
-    const host = await getHost(matchFields.hostId ?? '');
-    const tier = interviewFields.tier;
+    await getHost(hostId);
 
     // Create Zoom meeting
     const slotDate = {
@@ -54,23 +55,21 @@ export async function POST(request: NextRequest) {
     };
 
     let zoomMeeting;
-    if (tier === 'VIP') {
+    if (isVip) {
       const kayleyId = (env as { ZOOM_ACCOUNT_ID?: string }).ZOOM_ACCOUNT_ID ?? '';
       zoomMeeting = await createVIPMeeting(
-        matchFields.hostId,
-        matchFields.nannyId,
+        hostId,
+        nannyId,
         kayleyId,
         slotDate
       );
     } else {
       zoomMeeting = await createFastTrackMeeting(
-        matchFields.hostId,
-        matchFields.nannyId,
+        hostId,
+        nannyId,
         slotDate
       );
     }
-
-    const interviewId = (interview as { id?: string }).id ?? '';
     await updateInterviewWithZoom(
       interviewId,
       zoomMeeting.id,

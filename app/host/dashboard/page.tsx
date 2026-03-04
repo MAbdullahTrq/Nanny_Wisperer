@@ -2,9 +2,9 @@ import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { authOptions } from '@/lib/auth';
-import { getShortlistsByHost } from '@/lib/airtable/shortlists';
-import { getMatchesByHost } from '@/lib/airtable/matches';
-import { getInterviewRequestsByHost } from '@/lib/airtable/interview-requests';
+import { getShortlistsByHost } from '@/lib/db/shortlists';
+import { getMatchesByHost } from '@/lib/db/matches';
+import { getInterviewRequestsByHost } from '@/lib/db/interview-requests';
 import { Card, Button } from '@/components/ui';
 import GenerateShortlistButton from './GenerateShortlistButton';
 

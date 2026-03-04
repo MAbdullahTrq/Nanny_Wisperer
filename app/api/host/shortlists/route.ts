@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
-import { getShortlistsByHost } from '@/lib/airtable/shortlists';
+import { getShortlistsByHost } from '@/lib/db/shortlists';
 
 export async function GET() {
   const session = await getServerSession(authOptions);

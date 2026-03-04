@@ -1,11 +1,11 @@
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
-import { getMatch } from '@/lib/airtable/matches';
+import { getMatch } from '@/lib/db/matches';
 import {
   getConversationByMatchId,
   createConversation,
-} from '@/lib/airtable/chat';
+} from '@/lib/db/chat';
 
 interface PageProps {
   params: { matchId: string };

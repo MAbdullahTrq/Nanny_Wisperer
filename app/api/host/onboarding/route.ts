@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
-import { getHost, createHost, updateHost } from '@/lib/airtable/hosts';
-import { updateUser } from '@/lib/airtable/users';
+import { getHost, createHost, updateHost } from '@/lib/db/hosts';
+import { updateUser } from '@/lib/db/users';
 import { validateHostOnboarding, validateHostOnboardingSegment, type HostOnboardingSegmentId } from '@/lib/validation/host-onboarding';
 
 /** Build Airtable fields from validated input (omit empty strings, undefined). */

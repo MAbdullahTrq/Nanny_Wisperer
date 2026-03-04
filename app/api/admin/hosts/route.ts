@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
-import { getHosts } from '@/lib/airtable/hosts';
+import { getHosts } from '@/lib/db/hosts';
 
 export async function GET() {
   const session = await getServerSession(authOptions);

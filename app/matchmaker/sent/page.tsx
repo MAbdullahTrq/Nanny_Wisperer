@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { getMatches } from '@/lib/airtable/matches';
-import { getHost } from '@/lib/airtable/hosts';
-import { getNanny } from '@/lib/airtable/nannies';
+import { getMatches } from '@/lib/db/matches';
+import { getHost } from '@/lib/db/hosts';
+import { getNanny } from '@/lib/db/nannies';
 import { Card } from '@/components/ui';
 
 export default async function MatchmakerSentPage() {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createMatchesAndShortlist } from '@/lib/airtable/matching';
-import { getShortlist } from '@/lib/airtable/shortlists';
+import { createMatchesAndShortlist } from '@/lib/db/matching';
+import { getShortlist } from '@/lib/db/shortlists';
 import { generateShortlistToken } from '@/lib/auth/tokens';
 import { env } from '@/config/env';
 

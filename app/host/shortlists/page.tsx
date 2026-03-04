@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { authOptions } from '@/lib/auth';
-import { getShortlistsByHost } from '@/lib/airtable/shortlists';
+import { getShortlistsByHost } from '@/lib/db/shortlists';
 import { Card } from '@/components/ui';
 
 function formatDate(createdTime?: string): string {

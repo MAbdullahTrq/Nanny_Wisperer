@@ -142,8 +142,8 @@ export async function getEligibleNannies(
   host: Host,
   options?: { minScore?: number; maxCandidates?: number }
 ): Promise<Array<{ nanny: Nanny; score: MatchScoreResult }>> {
-  const { getHost } = await import('@/lib/airtable/hosts');
-  const { getNannies, getNanniesByTier } = await import('@/lib/airtable/nannies');
+  const { getHost } = await import('@/lib/db/hosts');
+  const { getNannies, getNanniesByTier } = await import('@/lib/db/nannies');
 
   const hostId = host.id;
   const resolvedHost = hostId ? await getHost(hostId) : host;

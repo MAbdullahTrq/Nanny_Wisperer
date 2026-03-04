@@ -1,7 +1,7 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
-import { getUserByEmail, getUserById } from '@/lib/airtable/users';
+import { getUserByEmail, getUserById } from '@/lib/db/users';
 import { verifyPassword, validateEmail } from '@/lib/auth/password';
 import { sendLoginNotificationEmail } from '@/lib/email';
 import { config } from '@/lib/config';
@@ -92,7 +92,7 @@ export const authOptions: NextAuthOptions = {
           token.isAdmin = (user as { isAdmin?: boolean }).isAdmin ?? false;
           token.isMatchmaker = (user as { isMatchmaker?: boolean }).isMatchmaker ?? false;
         } else if (account?.provider === 'google' && user.email) {
-          const { createUser, updateUser } = await import('@/lib/airtable/users');
+          const { createUser, updateUser } = await import('@/lib/db/users');
           const { syncUserToGHL } = await import('@/lib/ghl/sync-user');
           let dbUser = await getUserByEmail(user.email);
           if (!dbUser) {

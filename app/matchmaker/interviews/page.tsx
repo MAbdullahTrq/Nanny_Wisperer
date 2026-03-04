@@ -1,6 +1,6 @@
-import { getInterviewRequests } from '@/lib/airtable/interview-requests';
-import { getHost } from '@/lib/airtable/hosts';
-import { getNanny } from '@/lib/airtable/nannies';
+import { getInterviewRequests } from '@/lib/db/interview-requests';
+import { getHost } from '@/lib/db/hosts';
+import { getNanny } from '@/lib/db/nannies';
 import { Card } from '@/components/ui';
 
 export default async function MatchmakerInterviewsPage() {

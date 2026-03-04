@@ -1,5 +1,5 @@
-import { getNannies } from '@/lib/airtable/nannies';
-import { getUsersByIds } from '@/lib/airtable/users';
+import { getNannies } from '@/lib/db/nannies';
+import { getUsersByIds } from '@/lib/db/users';
 import CaregiversWithSearch from './CaregiversWithSearch';
 
 export default async function AdminCaregiversPage({

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createResetToken } from '@/lib/airtable/password-reset';
-import { getUserByEmail } from '@/lib/airtable/users';
+import { createResetToken } from '@/lib/db/password-reset';
+import { getUserByEmail } from '@/lib/db/users';
 import { validateEmail } from '@/lib/auth/password';
 import { sendForgotPasswordEmail } from '@/lib/email';
 import { config } from '@/lib/config';

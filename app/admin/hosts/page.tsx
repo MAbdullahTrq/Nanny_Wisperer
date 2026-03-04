@@ -1,5 +1,5 @@
-import { getHosts } from '@/lib/airtable/hosts';
-import { getUsersByIds } from '@/lib/airtable/users';
+import { getHosts } from '@/lib/db/hosts';
+import { getUsersByIds } from '@/lib/db/users';
 import HostsWithSearch from './HostsWithSearch';
 
 export default async function AdminHostsPage() {

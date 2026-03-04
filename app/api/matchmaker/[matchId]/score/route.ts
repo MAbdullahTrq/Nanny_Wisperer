@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
-import { updateMatch } from '@/lib/airtable/matches';
+import { updateMatch } from '@/lib/db/matches';
 
 export async function PATCH(
   request: NextRequest,

@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { validateToken } from '@/lib/auth/tokens';
-import { getMatch } from '@/lib/airtable/matches';
-import { getNanny } from '@/lib/airtable/nannies';
+import { getMatch } from '@/lib/db/matches';
+import { getNanny } from '@/lib/db/nannies';
 import { Card } from '@/components/ui';
 import CvProceedPassClient from './CvProceedPassClient';
 

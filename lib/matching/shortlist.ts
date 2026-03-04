@@ -2,9 +2,9 @@
  * Shortlist creation for a host. T5.2 — getEligibleNannies, create Match records, create Shortlist.
  */
 
-import { getHost } from '@/lib/airtable/hosts';
-import { createMatch } from '@/lib/airtable/matches';
-import { createShortlist } from '@/lib/airtable/shortlists';
+import { getHost } from '@/lib/db/hosts';
+import { createMatch } from '@/lib/db/matches';
+import { createShortlist } from '@/lib/db/shortlists';
 import { getEligibleNannies } from './algorithm';
 
 const TOP_N = 10;

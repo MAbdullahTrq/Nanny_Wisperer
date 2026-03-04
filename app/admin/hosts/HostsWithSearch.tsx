@@ -85,7 +85,31 @@ export default function HostsWithSearch({ hosts }: { hosts: HostWithEmail[] }) {
   }
 
   const thClass = 'py-2 pr-4 font-medium text-pastel-black';
-  const thSortableClass = `${thClass} cursor-pointer select-none hover:text-dark-green hover:underline`;
+  const thSortableClass =
+    'py-2 pr-4 font-medium text-pastel-black cursor-pointer select-none hover:text-dark-green hover:underline';
+
+  function handleSortKeyDown(e: React.KeyboardEvent, key: SortKey) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleSort(key);
+    }
+  }
+
+  function SortableTh({ label, sortKeyForColumn }: { label: string; sortKeyForColumn: SortKey }) {
+    return (
+      <th
+        className={thSortableClass}
+        role="columnheader"
+        aria-sort={sortKey === sortKeyForColumn ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+        tabIndex={0}
+        onClick={() => handleSort(sortKeyForColumn)}
+        onKeyDown={(e) => handleSortKeyDown(e, sortKeyForColumn)}
+      >
+        {label}
+        {sortKey === sortKeyForColumn && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+      </th>
+    );
+  }
 
   return (
     <>
@@ -116,38 +140,10 @@ export default function HostsWithSearch({ hosts }: { hosts: HostWithEmail[] }) {
           <table className="w-full text-sm text-left">
             <thead>
               <tr className="border-b border-dark-green/20">
-                <th
-                  className={thSortableClass}
-                  onClick={() => handleSort('name')}
-                  role="columnheader"
-                  aria-sort={sortKey === 'name' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
-                >
-                  Name / Email {sortKey === 'name' && (sortDir === 'asc' ? '↑' : '↓')}
-                </th>
-                <th
-                  className={thSortableClass}
-                  onClick={() => handleSort('location')}
-                  role="columnheader"
-                  aria-sort={sortKey === 'location' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
-                >
-                  Location {sortKey === 'location' && (sortDir === 'asc' ? '↑' : '↓')}
-                </th>
-                <th
-                  className={thSortableClass}
-                  onClick={() => handleSort('tier')}
-                  role="columnheader"
-                  aria-sort={sortKey === 'tier' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
-                >
-                  Tier {sortKey === 'tier' && (sortDir === 'asc' ? '↑' : '↓')}
-                </th>
-                <th
-                  className={thSortableClass}
-                  onClick={() => handleSort('startDate')}
-                  role="columnheader"
-                  aria-sort={sortKey === 'startDate' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
-                >
-                  Start date {sortKey === 'startDate' && (sortDir === 'asc' ? '↑' : '↓')}
-                </th>
+                <SortableTh label="Name / Email" sortKeyForColumn="name" />
+                <SortableTh label="Location" sortKeyForColumn="location" />
+                <SortableTh label="Tier" sortKeyForColumn="tier" />
+                <SortableTh label="Start date" sortKeyForColumn="startDate" />
                 <th className={thClass}>User</th>
               </tr>
             </thead>

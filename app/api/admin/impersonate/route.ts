@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
-import { getUserById } from '@/lib/airtable/users';
+import { getUserById } from '@/lib/db/users';
 import { createImpersonationToken } from '@/lib/auth/impersonation';
 import { config } from '@/lib/config';
 

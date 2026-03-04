@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { config } from '@/lib/config';
-import { upsertGoogleCalendarToken } from '@/lib/airtable/google-calendar-tokens';
+import { upsertGoogleCalendarToken } from '@/lib/db/google-calendar-tokens';
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');

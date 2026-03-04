@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
-import { getMatchesByHost } from '@/lib/airtable/matches';
+import { getMatchesByHost } from '@/lib/db/matches';
 
 export async function GET() {
   const session = await getServerSession(authOptions);

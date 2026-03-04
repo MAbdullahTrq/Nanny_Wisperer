@@ -2,9 +2,9 @@ import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { redirect, notFound } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
-import { getUserById } from '@/lib/airtable/users';
-import { getHost } from '@/lib/airtable/hosts';
-import { getNanny } from '@/lib/airtable/nannies';
+import { getUserById } from '@/lib/db/users';
+import { getHost } from '@/lib/db/hosts';
+import { getNanny } from '@/lib/db/nannies';
 import { Card } from '@/components/ui';
 import AdminUserActions from './AdminUserActions';
 

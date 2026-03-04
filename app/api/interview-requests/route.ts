@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
-import { createInterviewRequest } from '@/lib/airtable/interview-requests';
-import { getMatch } from '@/lib/airtable/matches';
+import { createInterviewRequest } from '@/lib/db/interview-requests';
+import { getMatch } from '@/lib/db/matches';
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { getUserByEmail, updateUser } from '@/lib/airtable/users';
+import { getUserByEmail, updateUser } from '@/lib/db/users';
 
 /**
  * After Google sign-up: set userType from ?role= and redirect to dashboard.

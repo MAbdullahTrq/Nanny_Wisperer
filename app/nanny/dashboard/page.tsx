@@ -2,9 +2,9 @@ import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { authOptions } from '@/lib/auth';
-import { getMatchesByNanny } from '@/lib/airtable/matches';
-import { getNanny } from '@/lib/airtable/nannies';
-import { getInterviewRequestsByNanny } from '@/lib/airtable/interview-requests';
+import { getMatchesByNanny } from '@/lib/db/matches';
+import { getNanny } from '@/lib/db/nannies';
+import { getInterviewRequestsByNanny } from '@/lib/db/interview-requests';
 import { Card } from '@/components/ui';
 
 const PROFILE_KEYS = [

@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
-import { createMatch } from '@/lib/airtable/matches';
+import { createMatch } from '@/lib/db/matches';
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);

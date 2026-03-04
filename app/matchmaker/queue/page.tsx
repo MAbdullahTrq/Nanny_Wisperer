@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
-import { getHost } from '@/lib/airtable/hosts';
+import { getHost } from '@/lib/db/hosts';
 import { getEligibleNannies } from '@/lib/matching/algorithm';
 import MatchmakerQueueClient from './MatchmakerQueueClient';
 import { Card } from '@/components/ui';

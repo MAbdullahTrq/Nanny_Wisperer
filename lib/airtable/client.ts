@@ -27,13 +27,14 @@ function getHeaders(): HeadersInit {
 
 export async function airtableGet<T = unknown>(
   tableName: string,
-  params?: { filterByFormula?: string; maxRecords?: number; view?: string }
-): Promise<{ records: Array<{ id: string; fields: T; createdTime?: string }> }> {
+  params?: { filterByFormula?: string; maxRecords?: number; view?: string; offset?: string }
+): Promise<{ records: Array<{ id: string; fields: T; createdTime?: string }>; offset?: string }> {
   const baseId = getBaseId();
   const url = new URL(`${AIRTABLE_API}/${baseId}/${encodeURIComponent(tableName)}`);
   if (params?.filterByFormula) url.searchParams.set('filterByFormula', params.filterByFormula);
   if (params?.maxRecords) url.searchParams.set('maxRecords', String(params.maxRecords));
   if (params?.view) url.searchParams.set('view', params.view);
+  if (params?.offset) url.searchParams.set('offset', params.offset);
 
   const res = await fetch(url.toString(), { headers: getHeaders(), cache: 'no-store' });
   if (!res.ok) {

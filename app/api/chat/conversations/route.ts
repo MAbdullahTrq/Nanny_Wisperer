@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import {
   getConversationsByHost,
   getConversationsByNanny,
-} from '@/lib/airtable/chat';
+} from '@/lib/db/chat';
 
 export async function GET() {
   const session = await getServerSession(authOptions);

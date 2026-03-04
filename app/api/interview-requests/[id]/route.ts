@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import {
   getInterviewRequestById,
   updateInterviewRequest,
-} from '@/lib/airtable/interview-requests';
+} from '@/lib/db/interview-requests';
 import type { InterviewRequestStatus } from '@/types/airtable';
 
 export async function GET(

@@ -3,7 +3,7 @@
  */
 
 import { config } from '@/lib/config';
-import { getGoogleCalendarTokenByUserId } from '@/lib/airtable/google-calendar-tokens';
+import { getGoogleCalendarTokenByUserId } from '@/lib/db/google-calendar-tokens';
 
 export interface FreeSlot {
   start: string;

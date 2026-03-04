@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { findValidResetToken, invalidateResetToken } from '@/lib/airtable/password-reset';
-import { getUserByEmail, updateUser } from '@/lib/airtable/users';
+import { findValidResetToken, invalidateResetToken } from '@/lib/db/password-reset';
+import { getUserByEmail, updateUser } from '@/lib/db/users';
 import { hashPassword, validatePassword } from '@/lib/auth/password';
 import { sendPasswordChangedEmail } from '@/lib/email';
 

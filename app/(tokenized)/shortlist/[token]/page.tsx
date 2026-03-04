@@ -2,9 +2,9 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { validateToken, generateCvToken } from '@/lib/auth/tokens';
-import { getShortlist } from '@/lib/airtable/shortlists';
-import { getMatch } from '@/lib/airtable/matches';
-import { getNanny } from '@/lib/airtable/nannies';
+import { getShortlist } from '@/lib/db/shortlists';
+import { getMatch } from '@/lib/db/matches';
+import { getNanny } from '@/lib/db/nannies';
 import { Card } from '@/components/ui';
 
 export const metadata: Metadata = {

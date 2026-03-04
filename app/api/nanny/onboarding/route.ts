@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
-import { getNanny, createNanny, updateNanny } from '@/lib/airtable/nannies';
-import { updateUser } from '@/lib/airtable/users';
+import { getNanny, createNanny, updateNanny } from '@/lib/db/nannies';
+import { updateUser } from '@/lib/db/users';
 import { validateNannyOnboarding, validateNannyOnboardingSegment, type NannyOnboardingSegmentId } from '@/lib/validation/nanny-onboarding';
 
 /** Nanny fields that are Long text in Airtable; send string, not object/array. */

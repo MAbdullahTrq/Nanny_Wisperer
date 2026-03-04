@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { validateToken } from '@/lib/auth/tokens';
-import { getHost } from '@/lib/airtable/hosts';
-import { getInterviewRequestByMatchId } from '@/lib/airtable/interview-requests';
+import { getHost } from '@/lib/db/hosts';
+import { getInterviewRequestByMatchId } from '@/lib/db/interview-requests';
 import { filterSlotsByKayleyFree } from '@/lib/scheduling/calendar-overlap';
 import HostSummary from '@/components/interview/HostSummary';
 import InterviewClient from './InterviewClient';

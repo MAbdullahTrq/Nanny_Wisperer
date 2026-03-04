@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
-import { findValidVerificationToken, invalidateVerificationToken } from '@/lib/airtable/email-verification';
-import { getUserByEmail, updateUser } from '@/lib/airtable/users';
+import { findValidVerificationToken, invalidateVerificationToken } from '@/lib/db/email-verification';
+import { getUserByEmail, updateUser } from '@/lib/db/users';
 import { config } from '@/lib/config';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {

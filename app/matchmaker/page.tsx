@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getHosts } from '@/lib/airtable/hosts';
+import { getHosts } from '@/lib/db/hosts';
 import { Card } from '@/components/ui';
 
 export default async function MatchmakerQueuePage() {

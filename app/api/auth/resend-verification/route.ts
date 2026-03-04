@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getUserByEmail } from '@/lib/airtable/users';
-import { createVerificationToken } from '@/lib/airtable/email-verification';
+import { getUserByEmail } from '@/lib/db/users';
+import { createVerificationToken } from '@/lib/db/email-verification';
 import { validateEmail } from '@/lib/auth/password';
 import { sendVerificationEmail } from '@/lib/email';
 import crypto from 'crypto';

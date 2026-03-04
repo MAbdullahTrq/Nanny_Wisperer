@@ -1,7 +1,6 @@
 /**
  * Central config for environment variables.
  * All keys have safe defaults so the app does not crash when vars are missing.
- * No DATABASE_URL — all data is in Airtable.
  */
 
 function getEnv(key: string, defaultValue = ''): string {
@@ -41,6 +40,10 @@ export const config = {
     apiKey: getEnv('SMTP2GO_API_KEY', ''),
     fromEmail: getEnv('SMTP2GO_FROM_EMAIL', 'noreply@nannywhisperer.com'),
     fromName: getEnv('SMTP2GO_FROM_NAME', 'Nanny Whisperer'),
+  },
+  database: {
+    /** PostgreSQL connection string (e.g. postgresql://user:pass@localhost:5432/nanny_wisperer) */
+    url: getEnv('DATABASE_URL', ''),
   },
   airtable: {
     /** Personal Access Token (PAT) from Airtable → Account → Developer hub */

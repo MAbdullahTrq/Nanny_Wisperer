@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
 import { validateToken } from '@/lib/auth/tokens';
-import { getInterviewRequestById, updateInterviewRequest } from '@/lib/airtable/interview-requests';
+import { getInterviewRequestById, updateInterviewRequest } from '@/lib/db/interview-requests';
 
 /**
  * Nanny selects a slot or "None available". Auth via session (nanny) or token (tokenized link).

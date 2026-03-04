@@ -1,9 +1,9 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
-import { getUserById } from '@/lib/airtable/users';
-import { updateHost } from '@/lib/airtable/hosts';
-import { updateNanny } from '@/lib/airtable/nannies';
+import { getUserById } from '@/lib/db/users';
+import { updateHost, getHostByUserId } from '@/lib/db/hosts';
+import { updateNanny, getNannyByUserId } from '@/lib/db/nannies';
 
 export async function PATCH(
   request: Request,
@@ -37,12 +37,14 @@ export async function PATCH(
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  if (user.airtableHostId) {
-    await updateHost(user.airtableHostId, { tier: tier || undefined });
+  const hostId = user.airtableHostId ?? (await getHostByUserId(user.id))?.id;
+  if (hostId) {
+    await updateHost(hostId, { tier: tier || undefined });
     return NextResponse.json({ tier, updated: 'host' });
   }
-  if (user.airtableNannyId) {
-    await updateNanny(user.airtableNannyId, { tier: tier || undefined, badge: tier || undefined });
+  const nannyId = user.airtableNannyId ?? (await getNannyByUserId(user.id))?.id;
+  if (nannyId) {
+    await updateNanny(nannyId, { tier: tier || undefined, badge: tier || undefined });
     return NextResponse.json({ tier, updated: 'nanny' });
   }
 

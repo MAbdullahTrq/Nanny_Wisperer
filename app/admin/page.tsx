@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { getHosts } from '@/lib/airtable/hosts';
-import { getNannies } from '@/lib/airtable/nannies';
+import { getHosts } from '@/lib/db/hosts';
+import { getNannies } from '@/lib/db/nannies';
 import { Card } from '@/components/ui';
 
 export default async function AdminOverviewPage() {

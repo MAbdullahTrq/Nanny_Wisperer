@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
-import { getConversation, addMessage } from '@/lib/airtable/chat';
+import { getConversation, addMessage } from '@/lib/db/chat';
 import type { SenderType } from '@/types/airtable';
 
 export async function POST(request: Request) {
