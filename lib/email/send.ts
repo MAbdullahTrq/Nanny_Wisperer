@@ -18,6 +18,7 @@ import {
   matchNotificationEmail,
   interviewScheduledEmail,
   shortlistDeliveredEmail,
+  interviewRequestEmail,
 } from './templates';
 
 interface SendResult {
@@ -167,6 +168,20 @@ export async function sendShortlistDeliveredEmail(params: {
     name: params.name,
     shortlistUrl: params.shortlistUrl,
     nannyCount: params.nannyCount,
+  });
+  return send(params.to, subject, html);
+}
+
+export async function sendInterviewRequestEmail(params: {
+  to: string;
+  name: string;
+  hostName: string;
+  selectSlotUrl: string;
+}): Promise<SendResult> {
+  const { subject, html } = interviewRequestEmail({
+    name: params.name,
+    hostName: params.hostName,
+    selectSlotUrl: params.selectSlotUrl,
   });
   return send(params.to, subject, html);
 }

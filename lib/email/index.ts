@@ -10,4 +10,5 @@ export {
   sendMatchNotificationEmail,
   sendInterviewScheduledEmail,
   sendShortlistDeliveredEmail,
+  sendInterviewRequestEmail,
 } from './send';

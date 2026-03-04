@@ -410,60 +410,140 @@ Call from each trigger point with the relevant data (shortlist URL, match detail
 
 ### 4.1 In-App Notifications
 
-**Current state:** No notification system. Dashboard cards show `—` for notifications.
+**Current state:** No notification system. Dashboard cards (e.g. host dashboard, nanny dashboard) show `—` or static text for notifications. There is no notification bell in the nav and no `notifications` table in the app database.
+
+**Relevant files:**
+- Host dashboard: `app/host/dashboard/page.tsx`
+- Nanny dashboard: `app/nanny/dashboard/page.tsx`
+- Host/nanny layouts (nav): `app/host/layout.tsx`, `app/nanny/layout.tsx`
+- PostgreSQL schema: `scripts/schema.sql` (no `notifications` table yet)
 
 **MVP approach (simple polling):**
 
-1. Create a `Notifications` table in Airtable: `id`, `userId`, `type`, `title`, `message`, `read` (checkbox), `link`, `createdTime`.
-2. Create API routes:
-   - `GET /api/notifications` — fetch unread for current user
-   - `PATCH /api/notifications/[id]/read` — mark as read
-3. Add a notification bell icon to the navigation with unread count badge.
-4. Create notifications at key events: new shortlist, both proceeded, interview request, meeting created.
+1. **Schema:** Add a `notifications` table in PostgreSQL (e.g. in `scripts/schema.sql`):
+   - `id`, `user_id` (FK to users), `type` (e.g. `shortlist_ready`, `both_proceeded`, `interview_request`, `meeting_created`), `title`, `message`, `read` (boolean, default false), `link` (optional URL), `created_time`.
+   - Indexes on `user_id` and `read` for fast “unread for user” queries.
+
+2. **Data layer:** Create `lib/db/notifications.ts` with:
+   - `createNotification(userId, { type, title, message, link })`
+   - `getUnreadByUserId(userId)`, `markAsRead(id)`, optional `markAllAsRead(userId)`.
+
+3. **API routes:**
+   - `GET /api/notifications` — returns unread (and optionally recent read) for the current user; used for bell dropdown and badge count.
+   - `PATCH /api/notifications/[id]/read` — mark one as read.
+   - Optional: `PATCH /api/notifications/read-all` — mark all as read for current user.
+
+4. **UI:** Add a notification bell icon to the host and nanny layout nav (e.g. next to profile/logout). Show unread count badge; click opens a dropdown or sidebar with list (title, message, link, time). Poll every 30–60 seconds or refetch on focus.
+
+5. **Creation points:** Insert a notification at:
+   - New shortlist delivered (host) — e.g. in matching trigger or shortlist delivery flow.
+   - Both proceeded on a match (host and nanny) — in `app/api/matches/proceed-pass/route.ts` after creating conversation.
+   - Interview request created (nanny) — after creating `InterviewRequest` and sending link.
+   - Meeting created (host and nanny) — after Google Meet link is set on `interview_requests`.
 
 ---
 
 ### 4.2 Chat File Attachments
 
-**Current state:** `attachmentUrl` field exists on Messages but no upload UI in chat.
+**Current state:** The `messages` table has an `attachment_url` column (see `scripts/schema.sql` and `lib/db/chat.ts`). The chat send API and types support an optional `attachmentUrl` when creating a message, but the UI does not: there is no upload control and no display of attachments. Messages are text-only in the thread.
+
+**Relevant files:**
+- Messages schema: `scripts/schema.sql` (messages.attachment_url), `lib/db/chat.ts` (`addMessage` accepts `attachmentUrl`; row mapping includes `attachment_url`).
+- Types: `types/airtable.ts` — `Message` has `attachmentUrl?: string`.
+- Chat UI: `app/host/chat/[conversationId]/ChatThreadClient.tsx`, `app/nanny/chat/[conversationId]/page.tsx` (uses same client with `isHost={false}`).
+- Upload reference: `app/api/upload/profile-image/route.ts` (Vercel Blob, auth, size limit).
 
 **Implementation:**
-1. Reuse the existing `/api/upload/profile-image` pattern (Vercel Blob) with a new `/api/upload/chat-attachment` route.
-2. Add a paperclip/attachment button to `ChatThreadClient`.
-3. On upload success, send a message with `attachmentUrl` set.
-4. Render attachments as clickable links or image previews in the message bubble.
+
+1. **Upload API:** Add `app/api/upload/chat-attachment/route.ts`:
+   - Require auth; optionally restrict to participants of the conversation (look up by `conversationId` from body or query).
+   - Accept `multipart/form-data` or base64 file; max size (e.g. 5 MB); allow images and PDFs (or a safe allowlist).
+   - Upload to Vercel Blob under a prefix like `chat-attachments/{conversationId}/`; return `{ url }`.
+
+2. **ChatThreadClient:** In `app/host/chat/[conversationId]/ChatThreadClient.tsx` (and ensure nanny thread uses same component):
+   - Add a paperclip/attachment button next to the message input.
+   - On file select: call the new upload API, then call `POST /api/chat/send` with `content` (optional caption) and `attachmentUrl: url`.
+   - In the message list, for each message: if `msg.attachmentUrl` is set, render a clickable link (“View attachment”) or an image thumbnail (if image/*) that opens in a new tab; keep existing text and timestamp.
+
+3. **Security:** Validate file type and size server-side; do not execute or serve uploaded files as HTML. Consider virus scanning for production.
 
 ---
 
 ### 4.3 Email Verification on Signup
 
-**Current state:** `emailVerified` is set to `false` on user creation and never updated.
+**Current state:** On user creation, `emailVerified` is set to `false` in the users table and is never updated by the app. The codebase already has verification email sending (`sendVerificationEmail` in `lib/email/send.ts`), a resend endpoint (`app/api/auth/resend-verification/route.ts`), and an email verification token table (`email_verification_tokens` in `scripts/schema.sql`). The missing piece is wiring the verify-email handler to set `emailVerified = true` and optionally enforcing “verified only” for sensitive actions.
+
+**Relevant files:**
+- Users: `lib/db/users.ts` (user create/update; need `updateUser(id, { emailVerified: true })`).
+- Schema: `scripts/schema.sql` — `users.email_verified`, `email_verification_tokens` table.
+- Email: `lib/email/send.ts` (`sendVerificationEmail`), `lib/email/index.ts`.
+- Signup: `app/api/auth/signup/route.ts` (create user, send verification email if implemented).
+- Verify endpoint: `app/api/auth/verify-email/route.ts` (if present — confirm it reads token, finds user, updates `emailVerified`, deletes/expires token).
 
 **Implementation:**
-1. Generate a verification token on signup, store in Airtable.
-2. Send verification email with link: `/api/auth/verify-email?token=...`.
-3. On click, set `emailVerified = true` in Airtable.
-4. Optionally restrict certain features until verified.
+
+1. **On signup (email/password):** After creating the user, generate a verification token, store it in `email_verification_tokens` with expiry (e.g. 24 hours), and call `sendVerificationEmail({ to, name, token })`. Link format: `${config.app.url}/api/auth/verify-email?token=...` or a dedicated page that calls that API.
+
+2. **Verify handler:** In `app/api/auth/verify-email/route.ts` (or equivalent): validate token (look up in `email_verification_tokens`, check expiry), get associated email/user, call `updateUser(userId, { emailVerified: true })`, delete or mark token used, redirect to login or dashboard with success message.
+
+3. **Optional enforcement:** Restrict “send message”, “schedule interview”, or “proceed” until `emailVerified` is true; show a banner on dashboard asking user to verify and use existing “Resend verification email” from profile or a dedicated page.
 
 ---
 
 ### 4.4 Contract Management
 
-**Current state:** Placeholder cards on dashboards. `preferredContractType` is collected in onboarding but no contract generation or management exists.
+**Current state:** Host and nanny dashboards show placeholder cards for “Contract” or “Contract status”. Onboarding collects contract-related preferences (e.g. host: `preferredContractType`, `trialPeriodPreference`; nanny: contract type, preferred days off) and stores them in the host/nanny `data` JSONB. There is no contracts table, no PDF or document generation, and no signing flow.
+
+**Relevant files:**
+- Host onboarding: `lib/validation/host-onboarding.ts` (e.g. `preferredContractType`, `trialPeriodPreference`).
+- Nanny onboarding: `lib/validation/nanny-onboarding.ts` (contract type, compensation fields).
+- Dashboards: `app/host/dashboard/page.tsx`, `app/nanny/dashboard/page.tsx` (placeholder cards).
 
 **Post-MVP approach:**
-1. Create a `Contracts` table in Airtable.
-2. Build a contract template system (PDF generation or rich text).
-3. VIP tier: pre-filled contracts based on match data.
-4. Contract signing flow (or link to external e-sign like DocuSign).
+
+1. **Schema:** Add a `contracts` table (e.g. in PostgreSQL): `id`, `match_id`, `host_id`, `nanny_id`, `status` (draft / sent / signed / cancelled), `document_url` (optional — link to generated PDF), `signed_at`, `created_time`, `updated_time`. Optionally a `contract_versions` or JSONB `terms` for versioning.
+
+2. **Templates:** Build a contract template (e.g. rich text or Markdown) with placeholders for family name, nanny name, start date, salary, hours, etc., filled from match + host + nanny data. Generate PDF (e.g. with a server-side library or external service) and store in Blob; save URL in `contracts.document_url`.
+
+3. **Flow:** For a given match (e.g. after both proceeded or after interview): allow host or admin to “Generate contract”; create `contracts` row, generate PDF, optionally send link by email (existing email layer). “Sign” can be in-app (checkbox + timestamp) or link to DocuSign/HelloSign; update `status` and `signed_at`.
+
+4. **VIP:** Pre-fill contract from match and tier rules; optionally different template or terms for VIP/Fast Track.
 
 ---
 
 ### 4.5 Profile Image Persistence Gap
 
-**Current state:** `/api/upload/profile-image` uploads to Vercel Blob and returns the URL, but does not write the URL back to the user's Airtable profile. The caller (onboarding form) must persist it.
+**Current state:** `POST /api/upload/profile-image` (see `app/api/upload/profile-image/route.ts`) uploads the file to Vercel Blob and returns `{ url }`. It does not write to the host or nanny profile itself. The onboarding forms (host and nanny) hold the URL in component state (`profileImageUrl`) and only persist it when the user saves the segment that includes profile (e.g. “Profile” step). Host/nanny data is stored in PostgreSQL: `hosts.data` and `nannies.data` are JSONB and include all onboarding fields; `lib/db/hosts.ts` and `lib/db/nannies.ts` merge incoming fields into `data` on create/update.
 
-**Verify:** Confirm that the onboarding form's save logic includes `profileImageUrl` in its Airtable update payload. If not, the uploaded image URL is lost when the user navigates away.
+**Relevant files:**
+- Upload: `app/api/upload/profile-image/route.ts`
+- Host onboarding: `app/host/onboarding/page.tsx` (state `profileImageUrl`, save via `saveSegment` with segment `profile`), `lib/validation/host-onboarding.ts` (segment `profile` includes `profileImageUrl`).
+- Nanny onboarding: `app/nanny/onboarding/page.tsx` (same pattern), `lib/validation/nanny-onboarding.ts`.
+- API: `app/api/host/onboarding/route.ts`, `app/api/nanny/onboarding/route.ts` — segment save sends validated segment keys to `updateHost`/`updateNanny`; Profile segment keys include `profileImageUrl`, so it is persisted if the user saves the Profile step.
+
+**Verify:**
+
+1. Confirm that after uploading a profile image and clicking “Save” on the Profile step, the host or nanny record in the DB has `data.profileImageUrl` (or equivalent) set. Check via admin or a quick GET of the onboarding API.
+2. If the user uploads an image but navigates away without saving the Profile segment, the URL is lost (by design — only saved on explicit save). Consider adding a short in-app note: “Save this section to keep your profile photo.”
+3. Optional improvement: auto-save `profileImageUrl` in the same request as the upload (e.g. upload API accepts optional `hostId`/`nannyId` and updates the record), so the image is stored even if the user never clicks Save on the Profile step. Weigh against accidental overwrites.
+
+---
+
+### 4.6 CV Page “Schedule interview” and “Back to shortlist” Links
+
+**Current state:** On the tokenized CV page (`app/(tokenized)/cv/[token]/page.tsx`), when both parties have proceeded, the app shows “Open chat” (correct link to `/chat/open/[matchId]`) and “Schedule interview (placeholder)” with `href="#"`. There is also a “Back to shortlist” link with `href="#"`. So the host cannot reach the schedule-interview or shortlist flow from the CV page.
+
+**Relevant files:**
+- `app/(tokenized)/cv/[token]/page.tsx` — both-proceeded block and footer links.
+- Token payload: `payload.matchId`, `payload.shortlistId`, `payload.hostId` (present when viewer is host).
+- Host schedule interview: `app/host/schedule-interview/[matchId]/page.tsx` (requires auth).
+- Tokenized shortlist: `/(tokenized)/shortlist/[token]` — needs a shortlist token.
+
+**Implementation:**
+
+1. **Schedule interview:** For the host viewer (e.g. when `payload.hostId` is set), replace the placeholder link with a link to `/host/schedule-interview/[matchId]` using `payload.matchId`. Note: the host must be logged in; if they opened the CV via token while logged out, they may need to log in and then go to that URL (or re-open from dashboard). So either link to `/host/schedule-interview/[matchId]` (works when logged in) or to a tokenized schedule-interview page if you add one later.
+
+2. **Back to shortlist:** If `payload.shortlistId` is present, generate a shortlist token for that shortlist (and host) and set “Back to shortlist” to `/(tokenized)/shortlist/[shortlistToken]`. If not (e.g. nanny viewing their own CV from matches), show “Back to dashboard” linking to `/nanny/dashboard` or hide “Back to shortlist”.
 
 ---
 

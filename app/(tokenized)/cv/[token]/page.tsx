@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { validateToken } from '@/lib/auth/tokens';
+import { validateToken, generateShortlistToken } from '@/lib/auth/tokens';
+import { config } from '@/lib/config';
 import { getMatch } from '@/lib/db/matches';
 import { getNanny } from '@/lib/db/nannies';
 import { Card } from '@/components/ui';
@@ -45,6 +46,11 @@ export default async function CvTokenPage({ params }: PageProps) {
   const name = [nannyData.firstName, nannyData.lastName].filter(Boolean).join(' ') || 'Nanny';
   const initial = name.charAt(0).toUpperCase();
   const bothProceeded = Boolean(match.hostProceed && match.nannyProceed);
+  const isHostView = Boolean(payload.hostId && !payload.nannyId);
+  const shortlistLink =
+    payload.shortlistId && payload.hostId
+      ? `${config.app.url}/shortlist/${generateShortlistToken(payload.shortlistId, payload.hostId)}`
+      : null;
 
   return (
     <div className="min-h-screen bg-off-white">
@@ -104,6 +110,7 @@ export default async function CvTokenPage({ params }: PageProps) {
         <CvProceedPassClient
           token={params.token}
           matchId={payload.matchId}
+          isHost={Boolean(payload.hostId) && !payload.nannyId}
           currentStatus={{ hostProceed: match.hostProceed, nannyProceed: match.nannyProceed }}
         />
 
@@ -118,16 +125,31 @@ export default async function CvTokenPage({ params }: PageProps) {
               >
                 Open chat
               </Link>
-              <Link href="#" className="text-dark-green font-medium hover:underline">
-                Schedule interview (placeholder)
-              </Link>
+              {isHostView && payload.matchId && (
+                <Link
+                  href={`/host/schedule-interview/${payload.matchId}`}
+                  className="rounded-lg bg-dark-green text-off-white px-4 py-2 text-sm font-medium hover:bg-dark-green/90 transition-colors"
+                >
+                  Schedule interview
+                </Link>
+              )}
             </div>
           </div>
         )}
 
         <p className="mt-8 text-center text-sm text-dark-green/60">
-          <Link href="#" className="hover:underline">Back to shortlist</Link>
-          {' · '}
+          {shortlistLink && isHostView && (
+            <>
+              <Link href={shortlistLink} className="hover:underline">Back to shortlist</Link>
+              {' · '}
+            </>
+          )}
+          {!isHostView && (
+            <>
+              <Link href="/nanny/dashboard" className="hover:underline">Back to dashboard</Link>
+              {' · '}
+            </>
+          )}
           Link expires after 7 days.
         </p>
       </div>

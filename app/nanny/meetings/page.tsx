@@ -1,13 +1,18 @@
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth';
 import { Card } from '@/components/ui';
+import MeetingsList from './MeetingsList';
 
-export default function NannyMeetingsPage() {
+export default async function NannyMeetingsPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) redirect('/login?callbackUrl=/nanny/meetings');
+
   return (
     <div>
       <h1 className="font-display text-2xl font-semibold text-pastel-black mb-2">Meetings</h1>
       <p className="text-dark-green/80 text-sm mb-6">Upcoming interviews and meetings.</p>
-      <Card className="p-6">
-        <p className="text-dark-green/80">No upcoming meetings.</p>
-      </Card>
+      <MeetingsList />
     </div>
   );
 }

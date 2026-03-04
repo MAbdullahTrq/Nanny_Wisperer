@@ -10,17 +10,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  let body: { conversationId?: string; content?: string };
+  let body: { conversationId?: string; content?: string; attachmentUrl?: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { conversationId, content } = body;
-  if (!conversationId || typeof content !== 'string') {
+  const { conversationId, content, attachmentUrl } = body;
+  if (!conversationId) {
     return NextResponse.json(
-      { error: 'conversationId and content are required' },
+      { error: 'conversationId is required' },
+      { status: 400 }
+    );
+  }
+  const text = typeof content === 'string' ? content.trim() : '';
+  if (!text && !attachmentUrl) {
+    return NextResponse.json(
+      { error: 'content or attachmentUrl is required' },
       { status: 400 }
     );
   }
@@ -51,7 +58,8 @@ export async function POST(request: Request) {
     conversationId,
     senderId,
     senderType,
-    content.trim()
+    text,
+    typeof attachmentUrl === 'string' && attachmentUrl ? attachmentUrl : undefined
   );
   return NextResponse.json({ success: true, message });
 }

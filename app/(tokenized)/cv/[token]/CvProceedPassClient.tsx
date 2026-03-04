@@ -6,12 +6,14 @@ import ProceedPass from '@/components/cv/ProceedPass';
 interface CvProceedPassClientProps {
   token: string;
   matchId: string;
+  isHost: boolean;
   currentStatus?: { hostProceed?: boolean; nannyProceed?: boolean };
 }
 
 export default function CvProceedPassClient({
   token,
   matchId,
+  isHost,
   currentStatus,
 }: CvProceedPassClientProps) {
   const [status, setStatus] = useState(currentStatus);
@@ -39,7 +41,7 @@ export default function CvProceedPassClient({
   return (
     <ProceedPass
       matchId={matchId}
-      isHost={true}
+      isHost={isHost}
       currentStatus={status}
       onAction={handleAction}
     />

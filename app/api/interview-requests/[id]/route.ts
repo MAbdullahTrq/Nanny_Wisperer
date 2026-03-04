@@ -5,6 +5,8 @@ import {
   getInterviewRequestById,
   updateInterviewRequest,
 } from '@/lib/db/interview-requests';
+import { getUserByHostId, getUserByNannyId } from '@/lib/db/users';
+import { createNotification } from '@/lib/db/notifications';
 import type { InterviewRequestStatus } from '@/types/airtable';
 
 export async function GET(
@@ -82,5 +84,33 @@ export async function PATCH(
   }
 
   const updated = await updateInterviewRequest(params.id, updates);
+
+  if (body.status === 'meeting_created' && updated.hostId && updated.nannyId) {
+    const [hostUser, nannyUser] = await Promise.all([
+      getUserByHostId(updated.hostId),
+      getUserByNannyId(updated.nannyId),
+    ]);
+    const meetingsLink = '/host/meetings';
+    const nannyMeetingsLink = '/nanny/meetings';
+    if (hostUser?.id) {
+      await createNotification({
+        userId: hostUser.id,
+        type: 'meeting_created',
+        title: 'Interview meeting scheduled',
+        message: 'View your upcoming meeting and join link.',
+        link: meetingsLink,
+      });
+    }
+    if (nannyUser?.id) {
+      await createNotification({
+        userId: nannyUser.id,
+        type: 'meeting_created',
+        title: 'Interview meeting scheduled',
+        message: 'View your upcoming meeting and join link.',
+        link: nannyMeetingsLink,
+      });
+    }
+  }
+
   return NextResponse.json({ interviewRequest: updated });
 }

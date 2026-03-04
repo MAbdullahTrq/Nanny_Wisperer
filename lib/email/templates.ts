@@ -283,3 +283,22 @@ export function shortlistDeliveredEmail(params: {
     html,
   };
 }
+
+export function interviewRequestEmail(params: {
+  name: string;
+  hostName: string;
+  selectSlotUrl: string;
+}) {
+  const html = layout(`
+    ${heading('Interview request from a family')}
+    ${paragraph(`Hi ${params.name},`)}
+    ${paragraph(`<strong>${params.hostName}</strong> would like to schedule an interview with you. They've proposed 5 time slots — please pick one that works for you.`)}
+    ${button('Select a time slot', params.selectSlotUrl)}
+    ${muted('This link is valid for 7 days. If you have any questions, you can message the family from your dashboard.')}
+  `);
+
+  return {
+    subject: `Interview request from ${params.hostName} – Nanny Whisperer`,
+    html,
+  };
+}

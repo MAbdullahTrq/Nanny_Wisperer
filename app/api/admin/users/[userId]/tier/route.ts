@@ -37,12 +37,13 @@ export async function PATCH(
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const hostId = user.airtableHostId ?? (await getHostByUserId(user.id))?.id;
+  const uid = user.id ?? userId;
+  const hostId = user.airtableHostId ?? (await getHostByUserId(uid))?.id;
   if (hostId) {
     await updateHost(hostId, { tier: tier || undefined });
     return NextResponse.json({ tier, updated: 'host' });
   }
-  const nannyId = user.airtableNannyId ?? (await getNannyByUserId(user.id))?.id;
+  const nannyId = user.airtableNannyId ?? (await getNannyByUserId(uid))?.id;
   if (nannyId) {
     await updateNanny(nannyId, { tier: tier || undefined, badge: tier || undefined });
     return NextResponse.json({ tier, updated: 'nanny' });

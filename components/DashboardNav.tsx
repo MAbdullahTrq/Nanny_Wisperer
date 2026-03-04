@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
+import NotificationBell from './NotificationBell';
 
 export type NavItem = { href: string; label: string };
 
@@ -25,6 +26,7 @@ export default function DashboardNav({
           Nanny Whisperer
         </Link>
         <div className="flex items-center gap-1 text-sm">
+          <NotificationBell />
           {items.map(({ href, label }) => {
             const isActive =
               pathname === href || (href !== brandHref && pathname.startsWith(href + '/'));

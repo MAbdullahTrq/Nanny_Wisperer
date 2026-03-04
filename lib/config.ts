@@ -23,7 +23,10 @@ export const config = {
   google: {
     clientId: getEnv('GOOGLE_CLIENT_ID', ''),
     clientSecret: getEnv('GOOGLE_CLIENT_SECRET', ''),
+    /** Calendar on which to create interview events (with Meet links). Use with GOOGLE_MEET_CALENDAR_REFRESH_TOKEN. */
     calendarId: getEnv('GOOGLE_CALENDAR_ID', ''),
+    /** Refresh token for the account that owns GOOGLE_CALENDAR_ID; used to create events with Meet. See Docs/Meet-And-Calendar-Setup.md. */
+    meetCalendarRefreshToken: getEnv('GOOGLE_MEET_CALENDAR_REFRESH_TOKEN', ''),
   },
   kayley: {
     calendarId: getEnv('KAYLEY_CALENDAR_ID', ''),
@@ -35,6 +38,8 @@ export const config = {
     webhookSecret: getEnv('GHL_WEBHOOK_SECRET', ''),
     /** Inbound webhook URL for signup form data (Host/Nanny) */
     inboundWebhookUrl: getEnv('GHL_INBOUND_WEBHOOK_URL', ''),
+    /** Inbound webhook URL for workflow triggers (shortlist_ready, both_proceeded, meeting_created) */
+    workflowWebhookUrl: getEnv('GHL_WORKFLOW_WEBHOOK_URL', ''),
   },
   smtp2go: {
     apiKey: getEnv('SMTP2GO_API_KEY', ''),

@@ -1,6 +1,6 @@
 /**
  * Shared matching utilities: array/field parsing and age-group normalization.
- * Used by lib/airtable/matching.ts, lib/matching/algorithm.ts, and lib/matching/filters.ts.
+ * Used by lib/matching/algorithm.ts and lib/matching/filters.ts.
  */
 
 /**
@@ -28,15 +28,16 @@ export function toArray<T>(v: T | T[] | undefined): T[] {
  * Age-group mapping: hosts use descriptive labels, nannies use age-range labels.
  * Both directions must be compared for a match.
  */
+/** Both directions: e.g. "teen" and "teens" each map to both so matching works either way. */
 export const AGE_GROUP_MAP: Record<string, string[]> = {
-  infant: ['0-2'],
-  toddler: ['3-6'],
-  'school age': ['7-12'],
-  teen: ['teens'],
-  '0-2': ['infant'],
-  '3-6': ['toddler'],
-  '7-12': ['school age'],
-  teens: ['teen'],
+  infant: ['infant', '0-2'],
+  toddler: ['toddler', '3-6'],
+  'school age': ['school age', '7-12'],
+  teen: ['teen', 'teens'],
+  teens: ['teen', 'teens'],
+  '0-2': ['infant', '0-2'],
+  '3-6': ['toddler', '3-6'],
+  '7-12': ['school age', '7-12'],
 };
 
 export function normalizeAgeGroup(g: string): string[] {

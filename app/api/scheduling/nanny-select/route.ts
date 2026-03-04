@@ -1,3 +1,7 @@
+/**
+ * @deprecated The main flow uses POST /api/interview-requests/[id]/select-slot (token or session).
+ * This route was an alternate Zoom-based slot selection path. Prefer the select-slot API.
+ */
 import { NextRequest, NextResponse } from 'next/server';
 import { validateToken } from '@/lib/auth/tokens';
 import { getInterviewByMatchId, updateInterviewRequest } from '@/lib/db/interviews';

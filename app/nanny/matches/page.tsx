@@ -64,8 +64,8 @@ export default async function NannyMatchesPage() {
             const host = match.hostId ? hostMap.get(match.hostId) ?? null : null;
             const summary = hostSummary(host);
             const cvToken =
-              match.id && match.hostId && airtableNannyId
-                ? generateCvToken(match.id, undefined, match.hostId, airtableNannyId)
+              match.id && airtableNannyId
+                ? generateCvToken(match.id, undefined, undefined, airtableNannyId)
                 : '';
             return (
               <li key={match.id}>

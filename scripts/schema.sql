@@ -165,3 +165,32 @@ CREATE TABLE IF NOT EXISTS google_calendar_tokens (
 );
 
 CREATE INDEX IF NOT EXISTS idx_google_calendar_tokens_user ON google_calendar_tokens(user_id);
+
+-- Reported issues (user-submitted; admin list/update status)
+CREATE TABLE IF NOT EXISTS reported_issues (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  created_time TIMESTAMPTZ NOT NULL DEFAULT now(),
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  description TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'Open' CHECK (status IN ('Open', 'In Progress', 'Resolved'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_reported_issues_user ON reported_issues(user_id);
+CREATE INDEX IF NOT EXISTS idx_reported_issues_status ON reported_issues(status);
+
+-- Notifications (in-app; bell in nav)
+CREATE TABLE IF NOT EXISTS notifications (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  created_time TIMESTAMPTZ NOT NULL DEFAULT now(),
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT,
+  link TEXT,
+  read BOOLEAN NOT NULL DEFAULT false
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, read);

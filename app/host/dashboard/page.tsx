@@ -125,6 +125,8 @@ export default async function HostDashboardPage() {
 
       <p className="mt-6 text-sm text-dark-green/60">
         Logged in as {session.user?.email}
+        {' · '}
+        <Link href="/issues/report" className="hover:underline">Report an issue</Link>
       </p>
     </div>
   );

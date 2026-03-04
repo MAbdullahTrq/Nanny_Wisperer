@@ -5,6 +5,9 @@ import {
   getConversationByMatchId,
   createConversation,
 } from '@/lib/db/chat';
+import { getUserByHostId, getUserByNannyId } from '@/lib/db/users';
+import { createNotification } from '@/lib/db/notifications';
+import { triggerBothProceeded } from '@/lib/ghl/workflows';
 
 export async function POST(request: Request) {
   let body: { token?: string; choice?: string };
@@ -66,6 +69,35 @@ export async function POST(request: Request) {
     const existing = await getConversationByMatchId(payload.matchId);
     if (!existing) {
       await createConversation(payload.matchId, match.hostId, match.nannyId);
+    }
+    const [hostUser, nannyUser] = await Promise.all([
+      getUserByHostId(match.hostId),
+      getUserByNannyId(match.nannyId),
+    ]);
+    await triggerBothProceeded({
+      contactId: hostUser?.ghlContactId,
+      matchId: payload.matchId,
+      hostId: match.hostId,
+      nannyId: match.nannyId,
+    });
+    const chatLink = `/chat/open/${payload.matchId}`;
+    if (hostUser?.id) {
+      await createNotification({
+        userId: hostUser.id,
+        type: 'both_proceeded',
+        title: 'You both want to connect',
+        message: 'Open chat or schedule an interview.',
+        link: chatLink,
+      });
+    }
+    if (nannyUser?.id) {
+      await createNotification({
+        userId: nannyUser.id,
+        type: 'both_proceeded',
+        title: 'You both want to connect',
+        message: 'Open chat or schedule an interview.',
+        link: chatLink,
+      });
     }
   }
 

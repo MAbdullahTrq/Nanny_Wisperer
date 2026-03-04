@@ -5,6 +5,7 @@ import { Button } from '@/components/ui';
 import type { Message } from '@/types/airtable';
 
 const POLL_INTERVAL_MS = 4000;
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 interface ChatThreadClientProps {
   conversationId: string;
@@ -24,6 +25,10 @@ function formatMessageTime(createdTime?: string): string {
   }
 }
 
+function isImageUrl(url: string): boolean {
+  return /\.(jpe?g|png|gif|webp)(\?|$)/i.test(url) || url.includes('blob.vercel-storage.com');
+}
+
 export default function ChatThreadClient({
   conversationId,
   initialMessages,
@@ -32,6 +37,7 @@ export default function ChatThreadClient({
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [content, setContent] = useState('');
   const [sending, setSending] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const fetchMessages = async () => {
@@ -50,21 +56,49 @@ export default function ChatThreadClient({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = content.trim();
-    if (!text || sending) return;
+  const sendMessage = async (text: string, attachmentUrl?: string) => {
+    if ((!text && !attachmentUrl) || sending) return;
     setSending(true);
     try {
       const res = await fetch('/api/chat/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId, content: text }),
+        body: JSON.stringify({
+          conversationId,
+          content: text ?? '',
+          ...(attachmentUrl && { attachmentUrl }),
+        }),
       });
       const data = await res.json();
       if (res.ok && data.message) {
         setMessages((prev) => [...prev, data.message]);
         setContent('');
+      }
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await sendMessage(content.trim());
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || sending) return;
+    setSending(true);
+    try {
+      const formData = new FormData();
+      formData.set('file', file);
+      const res = await fetch(`/api/upload/chat-attachment?conversationId=${encodeURIComponent(conversationId)}`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        await sendMessage(content.trim(), data.url);
       }
     } finally {
       setSending(false);
@@ -92,7 +126,31 @@ export default function ChatThreadClient({
                       : 'bg-light-green/60 text-pastel-black'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap break-words">{msg.content ?? ''}</p>
+                  {msg.attachmentUrl ? (
+                    <div className="space-y-1">
+                      {isImageUrl(msg.attachmentUrl) ? (
+                        <a href={msg.attachmentUrl} target="_blank" rel="noopener noreferrer" className="block">
+                          <img
+                            src={msg.attachmentUrl}
+                            alt="Attachment"
+                            className="max-w-full max-h-48 rounded object-contain"
+                          />
+                        </a>
+                      ) : (
+                        <a
+                          href={msg.attachmentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline break-all"
+                        >
+                          View attachment
+                        </a>
+                      )}
+                      {msg.content?.trim() ? <p className="whitespace-pre-wrap break-words">{msg.content}</p> : null}
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap break-words">{msg.content ?? ''}</p>
+                  )}
                   <p className={`text-xs mt-1 ${isMe ? 'text-off-white/80' : 'text-dark-green/70'}`}>
                     {formatMessageTime(msg.createdTime)}
                   </p>
@@ -104,7 +162,26 @@ export default function ChatThreadClient({
         <div ref={bottomRef} />
       </div>
 
-      <form onSubmit={handleSend} className="mt-3 flex gap-2">
+      <form onSubmit={handleSend} className="mt-3 flex gap-2 items-center">
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+          onChange={handleFileSelect}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="rounded-lg border border-light-green/60 p-2.5 text-dark-green hover:bg-light-green/20 disabled:opacity-50"
+          title="Attach file (image or PDF, max 5MB)"
+          disabled={sending}
+          aria-label="Attach file"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+          </svg>
+        </button>
         <input
           type="text"
           value={content}

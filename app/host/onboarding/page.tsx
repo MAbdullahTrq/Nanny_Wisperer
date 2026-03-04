@@ -145,7 +145,19 @@ export default function HostOnboardingPage() {
         setImageUploadError(json.error || 'Upload failed.');
         return;
       }
-      if (json.url) update('profileImageUrl', json.url);
+      if (json.url) {
+        update('profileImageUrl', json.url);
+        if (step === 0) {
+          const payload = getSegmentPayload('profile', { ...data, profileImageUrl: json.url });
+          fetch('/api/host/onboarding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          }).then((r) => r.json()).then((res) => {
+            if (res.success) setSavedSegment('profile');
+          });
+        }
+      }
     } catch {
       setImageUploadError('Failed to process or upload image. Please try again.');
     } finally {

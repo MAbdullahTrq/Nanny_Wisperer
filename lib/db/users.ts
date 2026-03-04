@@ -51,6 +51,26 @@ export async function getUserByGhlContactId(ghlContactId: string): Promise<User 
   return rowToUser(rows[0]!);
 }
 
+/** Find user by Airtable nanny ID (for sending interview request emails to nanny). */
+export async function getUserByNannyId(airtableNannyId: string): Promise<User | null> {
+  const { rows } = await query<Record<string, unknown>>(
+    'SELECT * FROM users WHERE airtable_nanny_id = $1 LIMIT 1',
+    [airtableNannyId]
+  );
+  if (rows.length === 0) return null;
+  return rowToUser(rows[0]!);
+}
+
+/** Find user by Airtable host ID (for sending shortlist-delivered email to host). */
+export async function getUserByHostId(airtableHostId: string): Promise<User | null> {
+  const { rows } = await query<Record<string, unknown>>(
+    'SELECT * FROM users WHERE airtable_host_id = $1 LIMIT 1',
+    [airtableHostId]
+  );
+  if (rows.length === 0) return null;
+  return rowToUser(rows[0]!);
+}
+
 const BATCH_SIZE = 50;
 
 export async function getUsersByIds(ids: string[]): Promise<Map<string, User>> {

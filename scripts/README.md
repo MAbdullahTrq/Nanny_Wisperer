@@ -9,6 +9,8 @@ createdb nanny_wisperer   # or your DB name
 psql "$DATABASE_URL" -f scripts/schema.sql
 ```
 
+Schema is idempotent (`CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`). Re-running after adding new tables (e.g. `reported_issues`, `notifications`) will create only what’s missing.
+
 ## Migrate data from Airtable to SQL
 
 Use this **once** when switching from Airtable to PostgreSQL so existing data is copied over.

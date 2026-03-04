@@ -13,13 +13,17 @@ export function GoHomeLink({
   children?: React.ReactNode;
 }) {
   const { data: session, status } = useSession();
-  const userType = (session?.user as { userType?: string } | undefined)?.userType;
+  const user = session?.user as { userType?: string; isAdmin?: boolean; isMatchmaker?: boolean } | undefined;
   const href =
-    status === 'authenticated' && userType === 'Nanny'
-      ? '/nanny/dashboard'
-      : status === 'authenticated' && userType === 'Host'
-        ? '/host/dashboard'
-        : '/';
+    status === 'authenticated' && user?.isAdmin
+      ? '/admin'
+      : status === 'authenticated' && user?.isMatchmaker
+        ? '/matchmaker'
+        : status === 'authenticated' && user?.userType === 'Nanny'
+          ? '/nanny/dashboard'
+          : status === 'authenticated' && user?.userType === 'Host'
+            ? '/host/dashboard'
+            : '/';
 
   return (
     <Link href={href} className={className} style={style}>

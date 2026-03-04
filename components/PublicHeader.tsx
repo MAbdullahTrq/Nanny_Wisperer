@@ -12,7 +12,10 @@ import { signOut, useSession } from 'next-auth/react';
 export default function PublicHeader() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  const userType = (session?.user as { userType?: string } | undefined)?.userType;
+  const user = session?.user as { userType?: string; isAdmin?: boolean; isMatchmaker?: boolean } | undefined;
+  const userType = user?.userType;
+  const isAdmin = user?.isAdmin;
+  const isMatchmaker = user?.isMatchmaker;
   const isAppRoute =
     pathname?.startsWith('/host') ||
     pathname?.startsWith('/nanny') ||
@@ -35,7 +38,11 @@ export default function PublicHeader() {
   }
 
   if (status === 'authenticated') {
-    const dashboardHref = userType === 'Nanny' ? '/nanny/dashboard' : '/host/dashboard';
+    const dashboardHref =
+      isAdmin ? '/admin'
+      : isMatchmaker ? '/matchmaker'
+      : userType === 'Nanny' ? '/nanny/dashboard'
+      : '/host/dashboard';
     return (
       <header className="border-b-2 border-dark-green/15 bg-white/90 shadow-sm sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
