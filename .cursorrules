@@ -1,5 +1,0 @@
-# Nanny Whisperer – Agent instructions
-
-## Deployment
-
-**This app is deployed on a VPS via SSH, not Vercel.** Do not run `vercel` or `vercel --prod`. Deployment is handled on the VPS (e.g. pull + build + restart); the agent does not need to trigger deployment after file changes.
