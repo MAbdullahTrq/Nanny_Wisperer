@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 
@@ -30,7 +31,9 @@ export default function PublicHeader() {
     return (
       <header className="border-b-2 border-dark-green/15 bg-white/90 shadow-sm sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <span className="font-display text-xl font-semibold text-dark-green">Nanny Whisperer</span>
+          <Link href="/" className="flex items-center">
+            <Image src="/logos/horizontal-green.svg" alt="Nanny Whisperer" width={180} height={40} className="h-8 w-auto" priority />
+          </Link>
           <span className="text-sm text-dark-green/70">Loading…</span>
         </div>
       </header>
@@ -46,11 +49,8 @@ export default function PublicHeader() {
     return (
       <header className="border-b-2 border-dark-green/15 bg-white/90 shadow-sm sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link
-            href={dashboardHref}
-            className="font-display text-xl font-semibold text-dark-green hover:text-pastel-black transition-colors"
-          >
-            Nanny Whisperer
+          <Link href={dashboardHref} className="flex items-center">
+            <Image src="/logos/horizontal-green.svg" alt="Nanny Whisperer" width={180} height={40} className="h-8 w-auto" />
           </Link>
           <nav className="flex items-center gap-6 text-sm">
             <Link
@@ -75,11 +75,8 @@ export default function PublicHeader() {
   return (
     <header className="border-b-2 border-dark-green/15 bg-white/90 shadow-sm sticky top-0 z-10">
       <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-        <Link
-          href="/"
-          className="font-display text-xl font-semibold text-dark-green hover:text-pastel-black transition-colors"
-        >
-          Nanny Whisperer
+        <Link href="/" className="flex items-center">
+          <Image src="/logos/horizontal-green.svg" alt="Nanny Whisperer" width={180} height={40} className="h-8 w-auto" />
         </Link>
         <nav className="flex items-center gap-6 text-sm">
           <Link

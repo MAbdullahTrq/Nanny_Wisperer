@@ -8,6 +8,11 @@ import { config } from '@/lib/config';
 
 const NANNY_FIELD_TO_AIRTABLE: Record<string, string> = {};
 
+/** Reverse map: Airtable field name → app field name (for reading records). */
+const AIRTABLE_TO_NANNY_FIELD: Record<string, string> = Object.fromEntries(
+  Object.entries(NANNY_FIELD_TO_AIRTABLE).map(([app, at]) => [at, app])
+);
+
 /** Always omit these when sending to Airtable (avoids 422 if column missing). */
 const ALWAYS_OMIT = new Set<string>(['euAuPairHoursAcknowledged', 'expectedWeeklyPocketMoney']);
 

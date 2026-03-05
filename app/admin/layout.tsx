@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth';
 import Link from 'next/link';
+import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import LogoutButton from '@/components/LogoutButton';
@@ -18,8 +19,8 @@ export default async function AdminLayout({
       <nav className="border-b border-dark-green/20 bg-white/90">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-6">
           <div className="flex items-center gap-6">
-            <Link href="/" className="font-display font-semibold text-pastel-black hover:text-dark-green transition-colors">
-              Nanny Whisperer
+            <Link href="/" className="flex items-center">
+              <Image src="/logos/horizontal-green.svg" alt="Nanny Whisperer" width={180} height={40} className="h-8 w-auto" />
             </Link>
             <div className="flex gap-4 text-sm text-dark-green">
               <Link href="/admin" className="hover:underline">Overview</Link>

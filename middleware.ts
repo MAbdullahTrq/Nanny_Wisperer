@@ -8,9 +8,25 @@ const RATE_LIMIT = {
 };
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
+/** Normalize X-Forwarded-* to a single value each so Next.js does not return 400 behind Nginx. */
+function normalizeForwardedHeaders(request: NextRequest): Headers {
+  const headers = new Headers(request.headers);
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor != null) {
+    const first = forwardedFor.split(',')[0]?.trim();
+    if (first) headers.set('x-forwarded-for', first);
+  }
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  if (forwardedProto != null) {
+    const first = forwardedProto.split(',')[0]?.trim();
+    if (first) headers.set('x-forwarded-proto', first);
+  }
+  return headers;
+}
+
 function getRateLimitKey(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for');
-  return forwarded ? forwarded.split(',')[0] : request.ip || 'unknown';
+  return forwarded ? forwarded.split(',')[0].trim() : request.ip || 'unknown';
 }
 
 function checkRateLimit(key: string): boolean {
@@ -27,6 +43,11 @@ function checkRateLimit(key: string): boolean {
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  const normalizedHeaders = normalizeForwardedHeaders(request);
+
+  if (path.startsWith('/_next/static/')) {
+    return NextResponse.next({ request: { headers: normalizedHeaders } });
+  }
 
   if (path.startsWith('/api/')) {
     const key = getRateLimitKey(request);
@@ -86,11 +107,12 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers: normalizedHeaders } });
 }
 
 export const config = {
   matcher: [
+    '/_next/static/:path*',
     '/api/:path*',
     '/host/:path*',
     '/nanny/:path*',
