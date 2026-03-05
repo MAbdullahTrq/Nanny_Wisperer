@@ -8,21 +8,22 @@ import { config } from '@/lib/config';
 
 const NANNY_FIELD_TO_AIRTABLE: Record<string, string> = {};
 
-/** Keys to omit when the base doesn't have these columns (avoids UNKNOWN_FIELD_NAME). */
-const OMIT_WHEN_NOT_IN_BASE = new Set<string>(['nannyType', 'euAuPairHoursAcknowledged', 'expectedWeeklyPocketMoney']);
+/** Always omit these when sending to Airtable (avoids 422 if column missing). */
+const ALWAYS_OMIT = new Set<string>(['euAuPairHoursAcknowledged', 'expectedWeeklyPocketMoney']);
 
-/** Reverse map: Airtable field name → app camelCase (for reading) */
-const AIRTABLE_TO_NANNY_FIELD: Record<string, string> = {};
+/** Omit nannyType unless AIRTABLE_NANNIES_HAVE_NANNY_TYPE=true. */
+const OMIT_NANNY_TYPE_UNLESS_IN_BASE = 'nannyType';
 
 /**
  * Convert payload keys to Airtable field names. Keys not in the map are passed through as-is (camelCase).
- * Omits nannyType unless AIRTABLE_NANNIES_HAVE_NANNY_TYPE=true so bases without that column can save.
+ * Always omits euAuPairHoursAcknowledged and expectedWeeklyPocketMoney. Omits nannyType unless config says base has that column.
  */
 export function nannyFieldsToAirtable(fields: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   const includeNannyType = config.airtable.nanniesHaveNannyTypeField;
   for (const [key, value] of Object.entries(fields)) {
-    if (OMIT_WHEN_NOT_IN_BASE.has(key) && !includeNannyType) continue;
+    if (ALWAYS_OMIT.has(key)) continue;
+    if (key === OMIT_NANNY_TYPE_UNLESS_IN_BASE && !includeNannyType) continue;
     const airtableKey = NANNY_FIELD_TO_AIRTABLE[key] ?? key;
     out[airtableKey] = value;
   }
